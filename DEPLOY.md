@@ -89,7 +89,7 @@ barberShop/
 
 `render.yaml` 中的 `JWT_SECRET` 设置为自动生成，但您也可以自定义：
 
-1. 在创建的服务中找到 **barber-shop-backend**
+1. 在创建的服务中找到 **qifu-barber-backend**
 2. 进入 **Environment** 标签
 3. 修改 `JWT_SECRET` 值（可选）
 4. 点击 **Save Changes**
@@ -108,7 +108,7 @@ Render 将自动：
 ### 步骤 6: 更新 CORS 配置
 
 部署完成后：
-1. 复制前端 URL（如 `https://barber-shop-frontend.onrender.com`）
+1. 复制前端 URL（如 `https://qifu-barber-frontend.onrender.com`）
 2. 更新 `render.yaml` 中的 `CORS_ORIGIN` 值
 3. 提交并推送到 GitHub
 4. Render 将自动重新部署
@@ -142,9 +142,9 @@ Render 将自动：
 1. 登录 Render Dashboard
 2. 点击 **"New +"** → 选择 **"PostgreSQL"**
 3. 配置数据库：
-   - **Name**: `barber-shop-db`
-   - **Database**: `barber_shop`
-   - **User**: `barber_user` (自动生成)
+   - **Name**: `qifu-barber-db`
+   - **Database**: `qifu_barber`
+   - **User**: `qifu_user` (自动生成)
    - **Region**: 选择最近的区域（如 Singapore）
    - **PostgreSQL Version**: 15
    - **Plan**: Free（开发测试）或 Starter（生产环境）
@@ -159,7 +159,7 @@ Render 将自动：
 
 复制 **Internal Database URL**，格式如下：
 ```
-postgresql://barber_user:xxxxxxxxxxxx@dpg-xxxxx-a.singapore-postgres.render.com/barber_shop
+postgresql://qifu_user:xxxxxxxxxxxx@dpg-xxxxx-a.singapore-postgres.render.com/qifu_barber
 ```
 
 ---
@@ -171,7 +171,7 @@ postgresql://barber_user:xxxxxxxxxxxx@dpg-xxxxx-a.singapore-postgres.render.com/
 1. 在 Render Dashboard 点击 **"New +"** → 选择 **"Web Service"**
 2. 连接您的 GitHub 仓库
 3. 配置服务：
-   - **Name**: `barber-shop-backend`
+   - **Name**: `qifu-barber-backend`
    - **Region**: 与数据库相同区域
    - **Branch**: `main`
    - **Root Directory**: `backend`
@@ -253,7 +253,7 @@ chmod +x backend/render-build.sh
 1. 在 Render Dashboard 点击 **"New +"** → 选择 **"Static Site"**
 2. 连接您的 GitHub 仓库
 3. 配置服务：
-   - **Name**: `barber-shop-frontend`
+   - **Name**: `qifu-barber-frontend`
    - **Branch**: `main`
    - **Root Directory**: `frontend`
    - **Build Command**: `npm install && npm run build`
@@ -265,7 +265,7 @@ chmod +x backend/render-build.sh
 
 | Key | Value |
 |-----|-------|
-| `VITE_API_BASE_URL` | `https://barber-shop-backend.onrender.com` |
+| `VITE_API_BASE_URL` | `https://qifu-barber-backend.onrender.com` |
 
 ### 步骤 3: 更新前端配置
 
@@ -298,7 +298,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000
 
 ### 更新后端 CORS 配置
 
-1. 前端部署完成后，复制前端 URL（如 `https://barber-shop-frontend.onrender.com`）
+1. 前端部署完成后，复制前端 URL（如 `https://qifu-barber-frontend.onrender.com`）
 2. 返回后端服务的 Environment 设置
 3. 更新 `CORS_ORIGIN` 为前端实际 URL
 4. 保存并重新部署
@@ -309,15 +309,15 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000
 ```env
 NODE_ENV=production
 PORT=4000
-DATABASE_URL=postgresql://barber_user:xxxx@dpg-xxxx.render.com/barber_shop
+DATABASE_URL=postgresql://qifu_user:xxxx@dpg-xxxx.render.com/qifu_barber
 JWT_SECRET=your-super-secret-jwt-key-change-this
 JWT_EXPIRES_IN=7d
-CORS_ORIGIN=https://barber-shop-frontend.onrender.com
+CORS_ORIGIN=https://qifu-barber-frontend.onrender.com
 ```
 
 **前端环境变量:**
 ```env
-VITE_API_BASE_URL=https://barber-shop-backend.onrender.com
+VITE_API_BASE_URL=https://qifu-barber-backend.onrender.com
 ```
 
 ---
@@ -338,7 +338,7 @@ npx ts-node prisma/seed.ts
 
 ```bash
 # 设置数据库 URL（使用 External URL）
-export DATABASE_URL="postgresql://barber_user:xxxx@dpg-xxxx.render.com/barber_shop"
+export DATABASE_URL="postgresql://qifu_user:xxxx@dpg-xxxx.render.com/qifu_barber"
 
 cd backend
 npx prisma migrate deploy
@@ -352,7 +352,7 @@ npx ts-node prisma/seed.ts
 ### 1. 检查数据库
 ```bash
 # 使用 External URL 连接
-psql postgresql://barber_user:xxxx@dpg-xxxx.render.com/barber_shop
+psql postgresql://qifu_user:xxxx@dpg-xxxx.render.com/qifu_barber
 
 # 验证表
 \dt
@@ -364,14 +364,14 @@ SELECT COUNT(*) FROM shops;
 ### 2. 测试后端 API
 ```bash
 # 健康检查
-curl https://barber-shop-backend.onrender.com/api/v1/health
+curl https://qifu-barber-backend.onrender.com/api/v1/health
 
 # 获取店铺列表
-curl https://barber-shop-backend.onrender.com/api/v1/shops
+curl https://qifu-barber-backend.onrender.com/api/v1/shops
 ```
 
 ### 3. 测试前端
-访问: `https://barber-shop-frontend.onrender.com`
+访问: `https://qifu-barber-frontend.onrender.com`
 
 检查：
 - ✅ 页面正常加载

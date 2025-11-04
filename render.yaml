@@ -1,8 +1,8 @@
 databases:
   # PostgreSQL 数据库
-  - name: barber-shop-db
-    databaseName: barber_shop
-    user: barber_user
+  - name: qifu-barber-db
+    databaseName: qifu_barber
+    user: qifu_user
     plan: free
     region: singapore
 
@@ -10,7 +10,7 @@ services:
 
   # 后端 API 服务
   - type: web
-    name: barber-shop-backend
+    name: qifu-barber-backend
     env: node
     region: singapore
     plan: free
@@ -25,19 +25,19 @@ services:
         value: 4000
       - key: DATABASE_URL
         fromDatabase:
-          name: barber-shop-db
+          name: qifu-barber-db
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: CORS_ORIGIN
-        value: https://barber-shop-frontend.onrender.com
+        value: https://qifu-barber-frontend.onrender.com
     autoDeploy: true
 
   # 前端静态站点
   - type: web
-    name: barber-shop-frontend
+    name: qifu-barber-frontend
     env: static
     buildCommand: npm install && npm run build
     staticPublishPath: dist
@@ -48,6 +48,6 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://barber-shop-backend.onrender.com
+        value: https://qifu-barber-backend.onrender.com
     autoDeploy: true
     pullRequestPreviewsEnabled: true

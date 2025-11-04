@@ -46,13 +46,13 @@ Render 将自动：
 
 部署完成后，您将看到：
 
-**后端服务**: `https://barber-shop-backend.onrender.com`
+**后端服务**: `https://qifu-barber-backend.onrender.com`
 - 访问 `/api/v1/health` 检查健康状态
 
-**前端应用**: `https://barber-shop-frontend.onrender.com`
+**前端应用**: `https://qifu-barber-frontend.onrender.com`
 - 直接访问查看应用
 
-**数据库**: `barber-shop-db`
+**数据库**: `qifu-barber-db`
 - 在 Render Dashboard 查看连接信息
 
 ### 步骤 5: 开始使用
