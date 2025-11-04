@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { NavBar, Loading, Toast, Button, Popup } from 'react-vant'
+import { Loading, Toast, Button, Popup } from 'react-vant'
 import { Success } from '@react-vant/icons'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { fetchShopStylistsAsync } from '@/store/slices/shopsSlice'
@@ -86,15 +86,42 @@ const SelectStylistPage: React.FC = () => {
       minHeight: '100vh',
       paddingBottom: '100px'
     }}>
-      {/* 顶部导航 */}
-      <NavBar
-        title="选择理发师"
-        onClickLeft={() => navigate(-1)}
-        style={{
-          background: theme.colors.bgPrimary,
-          boxShadow: theme.shadows.small
-        }}
-      />
+      {/* 自定义顶部导航 */}
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        background: theme.colors.bgPrimary,
+        boxShadow: theme.shadows.small,
+        padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        <div
+          onClick={() => navigate(-1)}
+          style={{
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: theme.colors.bgSecondary,
+            borderRadius: theme.borderRadius.round,
+            cursor: 'pointer',
+            marginRight: theme.spacing.md
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>←</span>
+        </div>
+        <h2 style={{
+          margin: 0,
+          fontSize: theme.fontSize.lg,
+          fontWeight: 'bold',
+          color: theme.colors.textPrimary
+        }}>
+          选择理发师
+        </h2>
+      </div>
 
       <div style={{ padding: theme.spacing.lg }}>
         {/* 预约信息提示 */}

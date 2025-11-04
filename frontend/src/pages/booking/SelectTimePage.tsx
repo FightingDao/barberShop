@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { NavBar, Loading, Toast, Button } from 'react-vant'
+import { Loading, Toast, Button } from 'react-vant'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { setDate, setTimeSlot, setAvailableTimeSlots, setLoadingTimeSlots } from '@/store/slices/bookingSlice'
 import { bookingApi } from '@/services'
@@ -16,11 +16,11 @@ const SelectTimePage: React.FC = () => {
   )
 
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null)
-  const [dateList, setDateList] = useState<Array<{ date: string; label: string; weekday: string }>>([])
+  const [dateList, setDateList] = useState<Array<{ date: string; label: string; weekday: string; displayDate: string }>>([])
 
   // 初始化日期列表
   useEffect(() => {
-    const dates: Array<{ date: string; label: string; weekday: string }> = []
+    const dates: Array<{ date: string; label: string; weekday: string; displayDate: string }> = []
     const today = new Date()
     const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
@@ -33,10 +33,16 @@ const SelectTimePage: React.FC = () => {
       else if (i === 1) label = '明天'
       else label = `${date.getDate()}`
 
+      // 格式化显示日期：10月30日
+      const month = date.getMonth() + 1
+      const day = date.getDate()
+      const displayDate = `${month}月${day}日`
+
       dates.push({
         date: date.toISOString().split('T')[0],
         label,
-        weekday: weekdays[date.getDay()]
+        weekday: weekdays[date.getDay()],
+        displayDate
       })
     }
     setDateList(dates)
@@ -86,6 +92,7 @@ const SelectTimePage: React.FC = () => {
   }
 
   const handleTimeSlotSelect = (slot: TimeSlot) => {
+    if (!slot.isAvailable) return // 不可用的时间段不能选择
     setSelectedSlot(slot)
   }
 
@@ -99,17 +106,38 @@ const SelectTimePage: React.FC = () => {
     navigate(`/booking/confirm/${shopId}`)
   }
 
+  // 生成所有时间段（包括不可用的）
+  const generateAllTimeSlots = () => {
+    const slots: Array<{ time: string; slot?: TimeSlot }> = []
+    const startHour = 9
+    const endHour = 21
+    
+    // 创建所有时间段
+    for (let hour = startHour; hour <= endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        if (hour === endHour && minute > 0) break // 21:00之后不再生成
+        
+        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
+        const slot = availableTimeSlots.find(s => s.startTime.substring(0, 5) === time)
+        slots.push({ time, slot })
+      }
+    }
+    
+    return slots
+  }
+
   // 按上午/下午分组时间段
   const groupTimeSlots = () => {
-    const morning: TimeSlot[] = []
-    const afternoon: TimeSlot[] = []
+    const allSlots = generateAllTimeSlots()
+    const morning: Array<{ time: string; slot?: TimeSlot }> = []
+    const afternoon: Array<{ time: string; slot?: TimeSlot }> = []
 
-    availableTimeSlots.forEach(slot => {
-      const hour = parseInt(slot.startTime.split(':')[0])
+    allSlots.forEach(item => {
+      const hour = parseInt(item.time.split(':')[0])
       if (hour < 12) {
-        morning.push(slot)
+        morning.push(item)
       } else {
-        afternoon.push(slot)
+        afternoon.push(item)
       }
     })
 
@@ -118,78 +146,91 @@ const SelectTimePage: React.FC = () => {
 
   const { morning, afternoon } = groupTimeSlots()
 
+  // 格式化底部显示的日期
+  const getSelectedDateDisplay = () => {
+    if (!selectedDate || !selectedSlot) return ''
+    const dateItem = dateList.find(d => d.date === selectedDate)
+    if (dateItem) {
+      return `${dateItem.displayDate} ${selectedSlot.startTime.substring(0, 5)}`
+    }
+    return ''
+  }
+
   return (
     <div style={{
-      background: theme.colors.bgSecondary,
+      background: theme.colors.bgPrimary,
       minHeight: '100vh',
       paddingBottom: '100px'
     }}>
-      {/* 顶部导航 */}
-      <NavBar
-        title="选择时间"
-        leftText="返回"
-        onClickLeft={() => navigate(-1)}
-        style={{
-          background: theme.colors.bgPrimary,
-          boxShadow: theme.shadows.small
-        }}
-      />
-
-      <div style={{ padding: theme.spacing.lg }}>
-        {/* 预约信息卡片 */}
+      {/* 自定义顶部导航 */}
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        background: theme.colors.bgPrimary,
+        boxShadow: theme.shadows.small,
+        padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+        paddingBottom: theme.spacing.sm
+      }}>
         <div style={{
-          ...commonStyles.card,
-          marginBottom: theme.spacing.lg,
-          background: theme.colors.primaryLight
+          display: 'flex',
+          alignItems: 'center',
+          marginBottom: theme.spacing.xs
         }}>
-          <div style={{
+          <div
+            onClick={() => navigate(-1)}
+            style={{
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: theme.colors.bgSecondary,
+              borderRadius: theme.borderRadius.round,
+              cursor: 'pointer',
+              marginRight: theme.spacing.md
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>←</span>
+          </div>
+          <h2 style={{
+            margin: 0,
             fontSize: theme.fontSize.lg,
-            fontWeight: 'bold',
-            color: theme.colors.primary,
-            marginBottom: theme.spacing.md
-          }}>
-            {shop?.name}
-          </div>
-          <div style={{
-            fontSize: theme.fontSize.sm,
-            color: theme.colors.textSecondary,
-            lineHeight: '1.6'
-          }}>
-            <div style={{ marginBottom: theme.spacing.xs }}>
-              <span>{service?.name}</span>
-              <span style={{
-                float: 'right',
-                color: theme.colors.primary,
-                fontWeight: 'bold'
-              }}>
-                ¥{service?.price}
-              </span>
-            </div>
-            <div>
-              <span>{stylist?.name || '不指定理发师'}</span>
-              <span style={{
-                float: 'right',
-                color: theme.colors.textTertiary
-              }}>
-                {service?.duration}分钟
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 日期选择 - 横向滚动 */}
-        <div style={{
-          ...commonStyles.card,
-          marginBottom: theme.spacing.lg
-        }}>
-          <h4 style={{
-            margin: `0 0 ${theme.spacing.md} 0`,
-            fontSize: theme.fontSize.md,
             fontWeight: 'bold',
             color: theme.colors.textPrimary
           }}>
-            📅 选择日期
-          </h4>
+            选择时间
+          </h2>
+        </div>
+        <p style={{
+          margin: `0 0 0 ${32 + theme.spacing.md}px`,
+          fontSize: theme.fontSize.sm,
+          color: theme.colors.textTertiary
+        }}>
+          请选择您方便的预约时间
+        </p>
+      </div>
+
+      <div style={{ padding: theme.spacing.lg }}>
+        {/* 日期选择 - 横向滚动 */}
+        <div style={{
+          marginBottom: theme.spacing.lg
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            marginBottom: theme.spacing.md
+          }}>
+            <span style={{ fontSize: '16px', marginRight: theme.spacing.xs }}>📅</span>
+            <h4 style={{
+              margin: 0,
+              fontSize: theme.fontSize.md,
+              fontWeight: 'bold',
+              color: theme.colors.textPrimary
+            }}>
+              选择日期
+            </h4>
+          </div>
           <div style={{
             display: 'flex',
             overflowX: 'auto',
@@ -211,12 +252,11 @@ const SelectTimePage: React.FC = () => {
                     padding: `${theme.spacing.md} ${theme.spacing.sm}`,
                     textAlign: 'center',
                     borderRadius: theme.borderRadius.medium,
-                    background: isSelected ? theme.colors.primary : theme.colors.bgTertiary,
+                    background: isSelected ? theme.colors.primary : '#F5F5F5',
                     color: isSelected ? theme.colors.bgPrimary : theme.colors.textSecondary,
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
-                    fontWeight: isSelected ? 'bold' : 'normal',
-                    boxShadow: isSelected ? theme.shadows.primary : 'none'
+                    fontWeight: isSelected ? 'bold' : 'normal'
                   }}
                 >
                   <div style={{
@@ -239,18 +279,7 @@ const SelectTimePage: React.FC = () => {
 
         {/* 时间段选择 */}
         {selectedDate && (
-          <div style={{
-            ...commonStyles.card
-          }}>
-            <h4 style={{
-              margin: `0 0 ${theme.spacing.lg} 0`,
-              fontSize: theme.fontSize.md,
-              fontWeight: 'bold',
-              color: theme.colors.textPrimary
-            }}>
-              ⏰ 请选择您方便的预约时间
-            </h4>
-
+          <div>
             {isLoadingTimeSlots ? (
               <div style={commonStyles.loadingCenter}>
                 <Loading size="24px" color={theme.colors.primary} />
@@ -260,37 +289,6 @@ const SelectTimePage: React.FC = () => {
                   fontSize: theme.fontSize.sm
                 }}>
                   正在加载可用时间...
-                </p>
-              </div>
-            ) : availableTimeSlots.length === 0 ? (
-              <div style={{
-                textAlign: 'center',
-                padding: `${theme.spacing.xl} ${theme.spacing.lg}`,
-                background: theme.colors.warning + '20',
-                borderRadius: theme.borderRadius.medium,
-                border: `1px dashed ${theme.colors.warning}`
-              }}>
-                <div style={{
-                  fontSize: '48px',
-                  marginBottom: theme.spacing.md,
-                  color: theme.colors.warning
-                }}>
-                  😔
-                </div>
-                <p style={{
-                  margin: `0 0 ${theme.spacing.sm} 0`,
-                  color: theme.colors.warning,
-                  fontSize: theme.fontSize.md,
-                  fontWeight: 'bold'
-                }}>
-                  当前日期无可用时间段
-                </p>
-                <p style={{
-                  margin: 0,
-                  color: theme.colors.textTertiary,
-                  fontSize: theme.fontSize.sm
-                }}>
-                  建议选择其他日期
                 </p>
               </div>
             ) : (
@@ -311,31 +309,36 @@ const SelectTimePage: React.FC = () => {
                       gridTemplateColumns: 'repeat(3, 1fr)',
                       gap: theme.spacing.md
                     }}>
-                      {morning.map((slot) => {
-                        const isSelected = selectedSlot?.id === slot.id
+                      {morning.map((item) => {
+                        // 使用startTime来匹配选中状态，因为API返回的时间段没有id
+                        const isSelected = selectedSlot?.startTime?.substring(0, 5) === item.time
+                        const isAvailable = item.slot?.isAvailable === true
                         return (
                           <div
-                            key={slot.id}
-                            onClick={() => handleTimeSlotSelect(slot)}
+                            key={item.time}
+                            onClick={() => item.slot && isAvailable && handleTimeSlotSelect(item.slot)}
                             style={{
                               padding: `${theme.spacing.md} ${theme.spacing.sm}`,
                               textAlign: 'center',
                               borderRadius: theme.borderRadius.medium,
-                                border: `1px solid ${theme.colors.bgTertiary}`,
-                                background: theme.colors.bgTertiary,
-                                color: theme.colors.textTertiary,
-                              cursor: 'pointer',
+                              background: isSelected 
+                                ? theme.colors.primary 
+                                : isAvailable 
+                                  ? theme.colors.bgPrimary 
+                                  : '#F5F5F5',
+                              color: isSelected 
+                                ? theme.colors.bgPrimary 
+                                : isAvailable 
+                                  ? theme.colors.textSecondary 
+                                  : '#CCCCCC',
+                              cursor: isAvailable ? 'pointer' : 'not-allowed',
                               transition: 'all 0.3s ease',
                               fontSize: theme.fontSize.md,
-                              ...(isSelected && {
-                                border: `2px solid ${theme.colors.primary}`,
-                                background: theme.colors.primaryLight,
-                                color: theme.colors.primary,
-                                fontWeight: 'bold'
-                              })
+                              border: `1px solid ${isSelected ? theme.colors.primary : isAvailable ? '#E0E0E0' : '#F5F5F5'}`,
+                              fontWeight: isSelected ? 'bold' : 'normal'
                             }}
                           >
-                            {slot.startTime.substring(0, 5)}
+                            {item.time}
                           </div>
                         )
                       })}
@@ -359,31 +362,36 @@ const SelectTimePage: React.FC = () => {
                       gridTemplateColumns: 'repeat(3, 1fr)',
                       gap: theme.spacing.md
                     }}>
-                      {afternoon.map((slot) => {
-                        const isSelected = selectedSlot?.id === slot.id
+                      {afternoon.map((item) => {
+                        // 使用startTime来匹配选中状态，因为API返回的时间段没有id
+                        const isSelected = selectedSlot?.startTime?.substring(0, 5) === item.time
+                        const isAvailable = item.slot?.isAvailable === true
                         return (
                           <div
-                            key={slot.id}
-                            onClick={() => handleTimeSlotSelect(slot)}
+                            key={item.time}
+                            onClick={() => item.slot && isAvailable && handleTimeSlotSelect(item.slot)}
                             style={{
                               padding: `${theme.spacing.md} ${theme.spacing.sm}`,
                               textAlign: 'center',
                               borderRadius: theme.borderRadius.medium,
-                                border: `1px solid ${theme.colors.bgTertiary}`,
-                                background: theme.colors.bgTertiary,
-                                color: theme.colors.textTertiary,
-                              cursor: 'pointer',
+                              background: isSelected 
+                                ? theme.colors.primary 
+                                : isAvailable 
+                                  ? theme.colors.bgPrimary 
+                                  : '#F5F5F5',
+                              color: isSelected 
+                                ? theme.colors.bgPrimary 
+                                : isAvailable 
+                                  ? theme.colors.textSecondary 
+                                  : '#CCCCCC',
+                              cursor: isAvailable ? 'pointer' : 'not-allowed',
                               transition: 'all 0.3s ease',
                               fontSize: theme.fontSize.md,
-                              ...(isSelected && {
-                                border: `2px solid ${theme.colors.primary}`,
-                                background: theme.colors.primaryLight,
-                                color: theme.colors.primary,
-                                fontWeight: 'bold'
-                              })
+                              border: `1px solid ${isSelected ? theme.colors.primary : isAvailable ? '#E0E0E0' : '#F5F5F5'}`,
+                              fontWeight: isSelected ? 'bold' : 'normal'
                             }}
                           >
-                            {slot.startTime.substring(0, 5)}
+                            {item.time}
                           </div>
                         )
                       })}
@@ -410,15 +418,12 @@ const SelectTimePage: React.FC = () => {
         {selectedSlot && selectedDate && (
           <div style={{
             marginBottom: theme.spacing.md,
-            padding: `${theme.spacing.sm} ${theme.spacing.md}`,
-            background: theme.colors.primaryLight,
-            borderRadius: theme.borderRadius.small,
             fontSize: theme.fontSize.sm,
-            color: theme.colors.primary
+            color: theme.colors.textSecondary
           }}>
-            <span>已选：</span>
-            <span style={{ fontWeight: 'bold' }}>
-              {dateList.find(d => d.date === selectedDate)?.label} {selectedSlot.startTime.substring(0, 5)}
+            <span>已选: </span>
+            <span style={{ fontWeight: 'bold', color: theme.colors.textPrimary }}>
+              {getSelectedDateDisplay()}
             </span>
           </div>
         )}
@@ -433,7 +438,7 @@ const SelectTimePage: React.FC = () => {
             cursor: selectedSlot ? 'pointer' : 'not-allowed'
           }}
         >
-          {selectedSlot ? '下一步' : '请选择时间段'}
+          下一步
         </Button>
       </div>
     </div>
