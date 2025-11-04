@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/store'
 import { fetchShopStylistsAsync } from '@/store/slices/shopsSlice'
 import { setStylist } from '@/store/slices/bookingSlice'
 import { Stylist } from '@/types'
+import { theme, commonStyles } from '@/styles/theme'
 
 const SelectStylistPage: React.FC = () => {
   const { shopId } = useParams()
@@ -61,32 +62,60 @@ const SelectStylistPage: React.FC = () => {
   const getStylistStatus = (stylist: Stylist): { text: string; color: string; canSelect: boolean } => {
     switch (stylist.status) {
       case 'active':
-        return { text: '可约', color: '#07c160', canSelect: true }
+        return { text: '可约', color: theme.colors.success, canSelect: true }
       case 'busy':
-        return { text: '已约满', color: '#ff6b6b', canSelect: false }
+        return { text: '已约满', color: theme.colors.primary, canSelect: false }
       case 'inactive':
-        return { text: '休息中', color: '#999', canSelect: false }
+        return { text: '休息中', color: theme.colors.textTertiary, canSelect: false }
       default:
-        return { text: '可约', color: '#07c160', canSelect: true }
+        return { text: '可约', color: theme.colors.success, canSelect: true }
     }
   }
 
   if (isLoading) {
-    return <Loading size="24px" style={{ marginTop: '100px' }} />
+    return (
+      <div style={commonStyles.loadingCenter}>
+        <Loading size="24px" color={theme.colors.primary} />
+      </div>
+    )
   }
 
   return (
-    <div style={{ paddingBottom: '80px', background: '#f8f9fa', minHeight: '100vh' }}>
+    <div style={{
+      background: theme.colors.bgSecondary,
+      minHeight: '100vh',
+      paddingBottom: '100px'
+    }}>
+      {/* 顶部导航 */}
       <NavBar
         title="选择理发师"
         onClickLeft={() => navigate(-1)}
+        style={{
+          background: theme.colors.bgPrimary,
+          boxShadow: theme.shadows.small
+        }}
       />
 
-      <div style={{ padding: '16px' }}>
+      <div style={{ padding: theme.spacing.lg }}>
         {/* 预约信息提示 */}
-        <div style={{ marginBottom: '16px', padding: '12px', background: 'white', borderRadius: '8px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', color: '#333' }}>{shop?.name}</h3>
-          <p style={{ margin: '8px 0 0', fontSize: '14px', color: '#999' }}>
+        <div style={{
+          ...commonStyles.card,
+          marginBottom: theme.spacing.lg,
+          background: theme.colors.primaryLight
+        }}>
+          <h3 style={{
+            margin: 0,
+            fontSize: theme.fontSize.lg,
+            color: theme.colors.primary,
+            fontWeight: 'bold'
+          }}>
+            {shop?.name}
+          </h3>
+          <p style={{
+            margin: `${theme.spacing.sm} 0 0 0`,
+            fontSize: theme.fontSize.sm,
+            color: theme.colors.textSecondary
+          }}>
             服务：{service?.name} | ¥{service?.price}
           </p>
         </div>
@@ -96,29 +125,33 @@ const SelectStylistPage: React.FC = () => {
           onClick={() => handleSelectStylist('none')}
           style={{
             position: 'relative',
-            padding: '16px',
-            marginBottom: '16px',
-            background: selectedStylist === 'none' ? '#f0f4ff' : 'white',
-            borderRadius: '12px',
-            border: selectedStylist === 'none' ? '2px solid #667eea' : '2px dashed #d0d0d0',
+            padding: theme.spacing.lg,
+            marginBottom: theme.spacing.lg,
+            background: selectedStylist === 'none' ? theme.colors.primaryLight : theme.colors.bgPrimary,
+            borderRadius: theme.borderRadius.medium,
+            border: selectedStylist === 'none'
+              ? `2px solid ${theme.colors.primary}`
+              : `2px dashed ${theme.colors.border}`,
             cursor: 'pointer',
-            transition: 'all 0.3s'
+            transition: 'all 0.3s ease',
+            boxShadow: selectedStylist === 'none' ? theme.shadows.primary : theme.shadows.small
           }}
         >
           {selectedStylist === 'none' && (
             <div style={{
               position: 'absolute',
-              top: '12px',
-              right: '12px',
-              width: '24px',
-              height: '24px',
-              borderRadius: '50%',
-              background: '#667eea',
+              top: theme.spacing.md,
+              right: theme.spacing.md,
+              width: '28px',
+              height: '28px',
+              borderRadius: theme.borderRadius.round,
+              background: theme.colors.primary,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              boxShadow: theme.shadows.medium
             }}>
-              <Success style={{ color: 'white', fontSize: '14px' }} />
+              <Success style={{ color: theme.colors.bgPrimary, fontSize: '16px' }} />
             </div>
           )}
 
@@ -126,20 +159,30 @@ const SelectStylistPage: React.FC = () => {
             <div style={{
               width: '60px',
               height: '60px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: theme.borderRadius.round,
+              background: selectedStylist === 'none' ? theme.colors.primary : theme.colors.bgTertiary,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '28px'
+              fontSize: '28px',
+              transition: 'all 0.3s ease'
             }}>
               👤
             </div>
-            <div style={{ marginLeft: '16px', flex: 1 }}>
-              <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
+            <div style={{ marginLeft: theme.spacing.lg, flex: 1 }}>
+              <h4 style={{
+                margin: `0 0 ${theme.spacing.sm} 0`,
+                fontSize: theme.fontSize.lg,
+                fontWeight: 'bold',
+                color: theme.colors.textPrimary
+              }}>
                 不指定理发师
               </h4>
-              <p style={{ margin: 0, fontSize: '13px', color: '#999' }}>
+              <p style={{
+                margin: 0,
+                fontSize: theme.fontSize.sm,
+                color: theme.colors.textSecondary
+              }}>
                 由店铺安排合适的理发师为您服务
               </p>
             </div>
@@ -147,16 +190,40 @@ const SelectStylistPage: React.FC = () => {
         </div>
 
         {/* 理发师列表 */}
-        <div style={{ marginBottom: '16px' }}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#666' }}>或选择指定理发师</h3>
+        <div style={{ marginBottom: theme.spacing.lg }}>
+          <h3 style={{
+            margin: `0 0 ${theme.spacing.md} 0`,
+            fontSize: theme.fontSize.md,
+            color: theme.colors.textSecondary,
+            fontWeight: 'bold'
+          }}>
+            或选择指定理发师
+          </h3>
         </div>
 
         {stylists.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#999', background: 'white', borderRadius: '12px' }}>
-            暂无理发师信息
+          <div style={commonStyles.empty}>
+            <div style={{
+              fontSize: '48px',
+              marginBottom: theme.spacing.md,
+              color: theme.colors.textTertiary
+            }}>
+              👨‍💼
+            </div>
+            <p style={{
+              margin: 0,
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textTertiary
+            }}>
+              暂无理发师信息
+            </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: theme.spacing.lg
+          }}>
             {stylists.map(stylist => {
               const statusInfo = getStylistStatus(stylist)
               const isSelected = selectedStylist && typeof selectedStylist !== 'string' && selectedStylist.id === stylist.id
@@ -168,45 +235,49 @@ const SelectStylistPage: React.FC = () => {
                   onClick={() => canSelect && handleSelectStylist(stylist)}
                   style={{
                     position: 'relative',
-                    padding: '16px',
-                    background: isSelected ? '#f0f4ff' : 'white',
-                    borderRadius: '12px',
-                    border: isSelected ? '2px solid #667eea' : '1px solid #f0f0f0',
+                    padding: theme.spacing.lg,
+                    background: isSelected ? theme.colors.primaryLight : theme.colors.bgPrimary,
+                    borderRadius: theme.borderRadius.medium,
+                    border: isSelected
+                      ? `2px solid ${theme.colors.primary}`
+                      : `1px solid ${theme.colors.borderLight}`,
                     cursor: canSelect ? 'pointer' : 'not-allowed',
                     opacity: canSelect ? 1 : 0.6,
-                    transition: 'all 0.3s',
-                    transform: isSelected ? 'scale(0.98)' : 'scale(1)'
+                    transition: 'all 0.3s ease',
+                    transform: isSelected ? 'scale(0.98)' : 'scale(1)',
+                    boxShadow: isSelected ? theme.shadows.primary : theme.shadows.small
                   }}
                 >
                   {/* 选中标记 */}
                   {isSelected && (
                     <div style={{
                       position: 'absolute',
-                      top: '12px',
-                      left: '12px',
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: '#667eea',
+                      top: theme.spacing.md,
+                      left: theme.spacing.md,
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: theme.borderRadius.round,
+                      background: theme.colors.primary,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      zIndex: 1
+                      zIndex: 1,
+                      boxShadow: theme.shadows.medium
                     }}>
-                      <Success style={{ color: 'white', fontSize: '14px' }} />
+                      <Success style={{ color: theme.colors.bgPrimary, fontSize: '16px' }} />
                     </div>
                   )}
 
                   {/* 状态徽章 */}
                   <div style={{
                     position: 'absolute',
-                    top: '12px',
-                    right: '12px',
-                    padding: '4px 12px',
-                    borderRadius: '12px',
+                    top: theme.spacing.md,
+                    right: theme.spacing.md,
+                    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                    borderRadius: theme.borderRadius.small,
                     background: statusInfo.color,
-                    color: 'white',
-                    fontSize: '12px',
+                    color: theme.colors.bgPrimary,
+                    fontSize: theme.fontSize.xs,
                     fontWeight: 'bold'
                   }}>
                     {statusInfo.text}
@@ -219,34 +290,44 @@ const SelectStylistPage: React.FC = () => {
                       style={{
                         width: '60px',
                         height: '60px',
-                        borderRadius: '50%',
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        borderRadius: theme.borderRadius.round,
+                        background: isSelected ? theme.colors.primary : theme.colors.bgTertiary,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '28px',
-                        marginLeft: isSelected ? '24px' : '0',
+                        marginLeft: isSelected ? '36px' : '0',
                         cursor: canSelect ? 'pointer' : 'not-allowed',
-                        transition: 'all 0.3s'
+                        transition: 'all 0.3s ease'
                       }}
                     >
                       👨‍🦰
                     </div>
 
                     {/* 理发师信息 */}
-                    <div style={{ marginLeft: '16px', flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                        <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
+                    <div style={{ marginLeft: theme.spacing.lg, flex: 1 }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginBottom: theme.spacing.sm
+                      }}>
+                        <h4 style={{
+                          margin: 0,
+                          fontSize: theme.fontSize.lg,
+                          fontWeight: 'bold',
+                          color: theme.colors.textPrimary
+                        }}>
                           {stylist.name}
                         </h4>
                         {stylist.level && (
                           <span style={{
-                            marginLeft: '8px',
-                            padding: '2px 8px',
-                            fontSize: '12px',
-                            background: '#667eea',
-                            color: 'white',
-                            borderRadius: '4px'
+                            marginLeft: theme.spacing.sm,
+                            padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                            fontSize: theme.fontSize.xs,
+                            background: theme.colors.primary,
+                            color: theme.colors.bgPrimary,
+                            borderRadius: theme.borderRadius.small,
+                            fontWeight: 'bold'
                           }}>
                             {stylist.level}
                           </span>
@@ -254,12 +335,21 @@ const SelectStylistPage: React.FC = () => {
                       </div>
 
                       {stylist.title && (
-                        <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#999' }}>
+                        <p style={{
+                          margin: `0 0 ${theme.spacing.xs} 0`,
+                          fontSize: theme.fontSize.sm,
+                          color: theme.colors.textTertiary
+                        }}>
                           {stylist.title}
                         </p>
                       )}
 
-                      <div style={{ display: 'flex', gap: '12px', fontSize: '13px', color: '#666' }}>
+                      <div style={{
+                        display: 'flex',
+                        gap: theme.spacing.md,
+                        fontSize: theme.fontSize.sm,
+                        color: theme.colors.textSecondary
+                      }}>
                         {stylist.experience && (
                           <span>🎓 {stylist.experience}年经验</span>
                         )}
@@ -282,27 +372,29 @@ const SelectStylistPage: React.FC = () => {
         bottom: 0,
         left: 0,
         right: 0,
-        padding: '12px 16px',
-        background: 'white',
-        borderTop: '1px solid #f0f0f0',
-        boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
+        padding: theme.spacing.lg,
+        background: theme.colors.bgPrimary,
+        borderTop: `1px solid ${theme.colors.borderLight}`,
+        boxShadow: theme.shadows.large
       }}>
-        <div style={{ marginBottom: '8px', fontSize: '14px', color: '#666' }}>
+        <div style={{
+          marginBottom: theme.spacing.md,
+          fontSize: theme.fontSize.base,
+          color: theme.colors.textSecondary
+        }}>
           {selectedStylist === 'none' && '已选：不指定理发师'}
           {selectedStylist && typeof selectedStylist !== 'string' && `已选：${selectedStylist.name}`}
           {!selectedStylist && '请选择理发师'}
         </div>
         <Button
           block
-          type="primary"
+          round
           disabled={!selectedStylist}
           onClick={handleNext}
           style={{
-            height: '48px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            background: selectedStylist ? '#667eea' : '#d0d0d0',
-            border: 'none'
+            ...commonStyles.primaryButton,
+            opacity: selectedStylist ? 1 : 0.6,
+            cursor: selectedStylist ? 'pointer' : 'not-allowed'
           }}
         >
           下一步
@@ -318,32 +410,42 @@ const SelectStylistPage: React.FC = () => {
         style={{ height: '70%' }}
       >
         {detailStylist && (
-          <div style={{ padding: '24px' }}>
+          <div style={{ padding: theme.spacing.xxl }}>
             {/* 头像和基本信息 */}
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+            <div style={{
+              textAlign: 'center',
+              marginBottom: theme.spacing.xxl
+            }}>
               <div style={{
                 width: '100px',
                 height: '100px',
-                borderRadius: '50%',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                borderRadius: theme.borderRadius.round,
+                background: theme.button.primary.background,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '48px',
-                margin: '0 auto 16px'
+                margin: `0 auto ${theme.spacing.lg}`,
+                boxShadow: theme.shadows.primary
               }}>
                 👨‍🦰
               </div>
-              <h2 style={{ margin: '0 0 8px 0', fontSize: '22px', color: '#333' }}>
+              <h2 style={{
+                margin: `0 0 ${theme.spacing.sm} 0`,
+                fontSize: theme.fontSize.huge,
+                color: theme.colors.textPrimary,
+                fontWeight: 'bold'
+              }}>
                 {detailStylist.name}
               </h2>
               {detailStylist.level && (
                 <span style={{
-                  padding: '4px 12px',
-                  fontSize: '14px',
-                  background: '#667eea',
-                  color: 'white',
-                  borderRadius: '6px'
+                  padding: `${theme.spacing.xs} ${theme.spacing.md}`,
+                  fontSize: theme.fontSize.sm,
+                  background: theme.colors.primary,
+                  color: theme.colors.bgPrimary,
+                  borderRadius: theme.borderRadius.small,
+                  fontWeight: 'bold'
                 }}>
                   {detailStylist.level}
                 </span>
@@ -351,47 +453,74 @@ const SelectStylistPage: React.FC = () => {
             </div>
 
             {/* 详细信息 */}
-            <div style={{ marginBottom: '24px' }}>
+            <div style={{ marginBottom: theme.spacing.xxl }}>
               {detailStylist.title && (
                 <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: '16px',
-                  padding: '12px',
-                  background: '#f8f9fa',
-                  borderRadius: '8px'
+                  ...commonStyles.card,
+                  marginBottom: theme.spacing.lg
                 }}>
-                  <span style={{ color: '#999' }}>职称</span>
-                  <span style={{ fontWeight: 'bold', color: '#333' }}>
-                    {detailStylist.title}
-                  </span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{
+                      fontSize: theme.fontSize.base,
+                      color: theme.colors.textTertiary
+                    }}>
+                      职称
+                    </span>
+                    <span style={{
+                      fontSize: theme.fontSize.md,
+                      fontWeight: 'bold',
+                      color: theme.colors.textPrimary
+                    }}>
+                      {detailStylist.title}
+                    </span>
+                  </div>
                 </div>
               )}
 
               {detailStylist.experience && (
                 <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: '16px',
-                  padding: '12px',
-                  background: '#f8f9fa',
-                  borderRadius: '8px'
+                  ...commonStyles.card,
+                  marginBottom: theme.spacing.lg
                 }}>
-                  <span style={{ color: '#999' }}>从业年限</span>
-                  <span style={{ fontWeight: 'bold', color: '#333' }}>
-                    {detailStylist.experience}年
-                  </span>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <span style={{
+                      fontSize: theme.fontSize.base,
+                      color: theme.colors.textTertiary
+                    }}>
+                      从业年限
+                    </span>
+                    <span style={{
+                      fontSize: theme.fontSize.md,
+                      fontWeight: 'bold',
+                      color: theme.colors.textPrimary
+                    }}>
+                      {detailStylist.experience}年
+                    </span>
+                  </div>
                 </div>
               )}
 
               {detailStylist.specialty && (
-                <div style={{ marginBottom: '16px' }}>
-                  <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#333' }}>擅长项目</h3>
+                <div style={{ marginBottom: theme.spacing.lg }}>
+                  <h3 style={{
+                    margin: `0 0 ${theme.spacing.md} 0`,
+                    fontSize: theme.fontSize.lg,
+                    color: theme.colors.textPrimary,
+                    fontWeight: 'bold'
+                  }}>
+                    擅长项目
+                  </h3>
                   <div style={{
-                    padding: '12px',
-                    background: '#f8f9fa',
-                    borderRadius: '8px',
-                    color: '#666',
+                    ...commonStyles.card,
+                    color: theme.colors.textSecondary,
                     lineHeight: '1.6'
                   }}>
                     {detailStylist.specialty}
@@ -401,13 +530,20 @@ const SelectStylistPage: React.FC = () => {
             </div>
 
             {/* 服务特色 */}
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#333' }}>服务特色</h3>
+            <div style={{ marginBottom: theme.spacing.xxl }}>
+              <h3 style={{
+                margin: `0 0 ${theme.spacing.md} 0`,
+                fontSize: theme.fontSize.lg,
+                color: theme.colors.textPrimary,
+                fontWeight: 'bold'
+              }}>
+                服务特色
+              </h3>
               <ul style={{
                 margin: 0,
-                paddingLeft: '20px',
-                fontSize: '14px',
-                color: '#666',
+                paddingLeft: theme.spacing.xl,
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
                 lineHeight: '1.8'
               }}>
                 <li>注重细节，精益求精</li>
@@ -418,14 +554,9 @@ const SelectStylistPage: React.FC = () => {
 
             <Button
               block
-              type="primary"
+              round
               onClick={() => setShowDetail(false)}
-              style={{
-                height: '48px',
-                fontSize: '16px',
-                background: '#667eea',
-                border: 'none'
-              }}
+              style={commonStyles.primaryButton}
             >
               知道了
             </Button>

@@ -4,6 +4,7 @@ import { NavBar, Button, Field, Dialog, Notify } from 'react-vant'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { setNotes, resetBookingFlow } from '@/store/slices/bookingSlice'
 import { bookingApi } from '@/services'
+import { theme, commonStyles } from '@/styles/theme'
 
 const ConfirmBookingPage: React.FC = () => {
   const { shopId } = useParams()
@@ -76,75 +77,194 @@ const ConfirmBookingPage: React.FC = () => {
   }
 
   return (
-    <div style={{ paddingBottom: '100px', background: '#f8f9fa', minHeight: '100vh' }}>
+    <div style={{
+      background: theme.colors.bgSecondary,
+      minHeight: '100vh',
+      paddingBottom: '100px'
+    }}>
+      {/* 顶部导航 */}
       <NavBar
         title="确认预约"
         onClickLeft={handleGoBack}
+        style={{
+          background: theme.colors.bgPrimary,
+          boxShadow: theme.shadows.small
+        }}
       />
 
-      <div style={{ padding: '16px' }}>
+      <div style={{ padding: theme.spacing.lg }}>
         {/* 预约信息确认 */}
         <div style={{
-          background: 'white',
-          padding: '16px',
-          borderRadius: '12px',
-          marginBottom: '16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+          ...commonStyles.card,
+          marginBottom: theme.spacing.lg
         }}>
           <h3 style={{
-            margin: '0 0 16px 0',
-            fontSize: '18px',
-            color: '#333',
-            borderBottom: '2px solid #667eea',
-            paddingBottom: '12px',
+            margin: `0 0 ${theme.spacing.lg} 0`,
+            fontSize: theme.fontSize.xl,
+            color: theme.colors.textPrimary,
+            borderBottom: `2px solid ${theme.colors.primary}`,
+            paddingBottom: theme.spacing.md,
             display: 'flex',
             alignItems: 'center'
           }}>
-            <span style={{ marginRight: '8px' }}>📋</span>
+            <span style={{ marginRight: theme.spacing.sm }}>📋</span>
             预约信息
           </h3>
 
           <div style={{ lineHeight: '2.4' }}>
-            <div style={{ display: 'flex', marginBottom: '12px', background: '#f8f9fa', padding: '8px 12px', borderRadius: '6px' }}>
-              <span style={{ color: '#999', width: '90px', flexShrink: 0 }}>店铺名称</span>
-              <span style={{ fontWeight: '600', color: '#333' }}>{shop?.name}</span>
+            <div style={{
+              display: 'flex',
+              marginBottom: theme.spacing.md,
+              background: theme.colors.bgTertiary,
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+              borderRadius: theme.borderRadius.small
+            }}>
+              <span style={{
+                color: theme.colors.textTertiary,
+                width: '90px',
+                flexShrink: 0
+              }}>
+                店铺名称
+              </span>
+              <span style={{
+                fontWeight: 'bold',
+                color: theme.colors.textPrimary
+              }}>
+                {shop?.name}
+              </span>
             </div>
 
-            <div style={{ display: 'flex', marginBottom: '12px', padding: '8px 12px' }}>
-              <span style={{ color: '#999', width: '90px', flexShrink: 0 }}>店铺地址</span>
-              <span style={{ fontSize: '14px', color: '#666' }}>{shop?.address}</span>
+            <div style={{
+              display: 'flex',
+              marginBottom: theme.spacing.md,
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`
+            }}>
+              <span style={{
+                color: theme.colors.textTertiary,
+                width: '90px',
+                flexShrink: 0
+              }}>
+                店铺地址
+              </span>
+              <span style={{
+                fontSize: theme.fontSize.sm,
+                color: theme.colors.textSecondary
+              }}>
+                {shop?.address}
+              </span>
             </div>
 
-            <div style={{ display: 'flex', marginBottom: '12px', background: '#f8f9fa', padding: '8px 12px', borderRadius: '6px' }}>
-              <span style={{ color: '#999', width: '90px', flexShrink: 0 }}>服务项目</span>
-              <span style={{ fontWeight: '600', color: '#333' }}>{service?.name}</span>
+            <div style={{
+              display: 'flex',
+              marginBottom: theme.spacing.md,
+              background: theme.colors.bgTertiary,
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+              borderRadius: theme.borderRadius.small
+            }}>
+              <span style={{
+                color: theme.colors.textTertiary,
+                width: '90px',
+                flexShrink: 0
+              }}>
+                服务项目
+              </span>
+              <span style={{
+                fontWeight: 'bold',
+                color: theme.colors.textPrimary
+              }}>
+                {service?.name}
+              </span>
             </div>
 
-            <div style={{ display: 'flex', marginBottom: '12px', padding: '8px 12px' }}>
-              <span style={{ color: '#999', width: '90px', flexShrink: 0 }}>理发师</span>
-              <span style={{ fontWeight: '600', color: '#333' }}>{stylist?.name || '不指定'}</span>
+            <div style={{
+              display: 'flex',
+              marginBottom: theme.spacing.md,
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`
+            }}>
+              <span style={{
+                color: theme.colors.textTertiary,
+                width: '90px',
+                flexShrink: 0
+              }}>
+                理发师
+              </span>
+              <span style={{
+                fontWeight: 'bold',
+                color: theme.colors.textPrimary
+              }}>
+                {stylist?.name || '不指定'}
+              </span>
             </div>
 
-            <div style={{ display: 'flex', marginBottom: '12px', background: '#f8f9fa', padding: '8px 12px', borderRadius: '6px' }}>
-              <span style={{ color: '#999', width: '90px', flexShrink: 0 }}>预约时间</span>
+            <div style={{
+              display: 'flex',
+              marginBottom: theme.spacing.md,
+              background: theme.colors.bgTertiary,
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+              borderRadius: theme.borderRadius.small
+            }}>
+              <span style={{
+                color: theme.colors.textTertiary,
+                width: '90px',
+                flexShrink: 0
+              }}>
+                预约时间
+              </span>
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                <div style={{
+                  fontWeight: 'bold',
+                  color: theme.colors.textPrimary,
+                  marginBottom: theme.spacing.xs
+                }}>
                   {formatDate(selectedDate)}
                 </div>
-                <div style={{ fontSize: '14px', color: '#667eea', fontWeight: 'bold' }}>
+                <div style={{
+                  fontSize: theme.fontSize.sm,
+                  color: theme.colors.primary,
+                  fontWeight: 'bold'
+                }}>
                   {timeSlot?.startTime?.substring(0, 5)}
                 </div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', marginBottom: '12px', padding: '8px 12px' }}>
-              <span style={{ color: '#999', width: '90px', flexShrink: 0 }}>服务时长</span>
-              <span style={{ color: '#666' }}>{service?.duration}分钟</span>
+            <div style={{
+              display: 'flex',
+              marginBottom: theme.spacing.md,
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`
+            }}>
+              <span style={{
+                color: theme.colors.textTertiary,
+                width: '90px',
+                flexShrink: 0
+              }}>
+                服务时长
+              </span>
+              <span style={{ color: theme.colors.textSecondary }}>
+                {service?.duration}分钟
+              </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', background: '#fff9e6', padding: '12px', borderRadius: '6px', border: '1px solid #ffe58f' }}>
-              <span style={{ color: '#999', width: '90px', flexShrink: 0 }}>服务价格</span>
-              <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff6b6b' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              background: theme.colors.primaryLight,
+              padding: theme.spacing.md,
+              borderRadius: theme.borderRadius.small,
+              border: `1px solid ${theme.colors.primary}`
+            }}>
+              <span style={{
+                color: theme.colors.textTertiary,
+                width: '90px',
+                flexShrink: 0
+              }}>
+                服务价格
+              </span>
+              <span style={{
+                fontSize: theme.fontSize.huge,
+                fontWeight: 'bold',
+                color: theme.colors.primary
+              }}>
                 ¥{service?.price}
               </span>
             </div>
@@ -153,56 +273,88 @@ const ConfirmBookingPage: React.FC = () => {
 
         {/* 联系信息 */}
         <div style={{
-          background: 'white',
-          padding: '16px',
-          borderRadius: '12px',
-          marginBottom: '16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+          ...commonStyles.card,
+          marginBottom: theme.spacing.lg
         }}>
           <h3 style={{
-            margin: '0 0 16px 0',
-            fontSize: '18px',
-            color: '#333',
-            borderBottom: '2px solid #667eea',
-            paddingBottom: '12px',
+            margin: `0 0 ${theme.spacing.lg} 0`,
+            fontSize: theme.fontSize.xl,
+            color: theme.colors.textPrimary,
+            borderBottom: `2px solid ${theme.colors.primary}`,
+            paddingBottom: theme.spacing.md,
             display: 'flex',
             alignItems: 'center'
           }}>
-            <span style={{ marginRight: '8px' }}>👤</span>
+            <span style={{ marginRight: theme.spacing.sm }}>👤</span>
             联系信息
           </h3>
 
           <div style={{ lineHeight: '2.4' }}>
-            <div style={{ display: 'flex', marginBottom: '12px', background: '#f8f9fa', padding: '8px 12px', borderRadius: '6px' }}>
-              <span style={{ color: '#999', width: '90px', flexShrink: 0 }}>姓名</span>
-              <span style={{ fontWeight: '600', color: '#333' }}>{user?.nickname || '用户'}</span>
+            <div style={{
+              display: 'flex',
+              marginBottom: theme.spacing.md,
+              background: theme.colors.bgTertiary,
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`,
+              borderRadius: theme.borderRadius.small
+            }}>
+              <span style={{
+                color: theme.colors.textTertiary,
+                width: '90px',
+                flexShrink: 0
+              }}>
+                姓名
+              </span>
+              <span style={{
+                fontWeight: 'bold',
+                color: theme.colors.textPrimary
+              }}>
+                {user?.nickname || '用户'}
+              </span>
             </div>
 
-            <div style={{ display: 'flex', padding: '8px 12px' }}>
-              <span style={{ color: '#999', width: '90px', flexShrink: 0 }}>手机号</span>
-              <span style={{ fontWeight: '600', color: '#333' }}>{user?.phone}</span>
+            <div style={{
+              display: 'flex',
+              padding: `${theme.spacing.sm} ${theme.spacing.md}`
+            }}>
+              <span style={{
+                color: theme.colors.textTertiary,
+                width: '90px',
+                flexShrink: 0
+              }}>
+                手机号
+              </span>
+              <span style={{
+                fontWeight: 'bold',
+                color: theme.colors.textPrimary
+              }}>
+                {user?.phone}
+              </span>
             </div>
           </div>
         </div>
 
         {/* 备注 */}
         <div style={{
-          background: 'white',
-          padding: '16px',
-          borderRadius: '12px',
-          marginBottom: '16px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+          ...commonStyles.card,
+          marginBottom: theme.spacing.lg
         }}>
           <h3 style={{
-            margin: '0 0 12px 0',
-            fontSize: '18px',
-            color: '#333',
+            margin: `0 0 ${theme.spacing.md} 0`,
+            fontSize: theme.fontSize.xl,
+            color: theme.colors.textPrimary,
             display: 'flex',
             alignItems: 'center'
           }}>
-            <span style={{ marginRight: '8px' }}>📝</span>
+            <span style={{ marginRight: theme.spacing.sm }}>📝</span>
             备注信息
-            <span style={{ fontSize: '14px', color: '#999', fontWeight: 'normal', marginLeft: '8px' }}>(可选)</span>
+            <span style={{
+              fontSize: theme.fontSize.sm,
+              color: theme.colors.textTertiary,
+              fontWeight: 'normal',
+              marginLeft: theme.spacing.sm
+            }}>
+              (可选)
+            </span>
           </h3>
           <Field
             value={notes}
@@ -214,23 +366,29 @@ const ConfirmBookingPage: React.FC = () => {
             placeholder="请输入备注信息，如特殊需求、发型要求等"
             showWordLimit
             style={{
-              background: '#f8f9fa',
-              borderRadius: '8px',
-              padding: '12px'
+              background: theme.colors.bgTertiary,
+              borderRadius: theme.borderRadius.small,
+              padding: theme.spacing.md
             }}
           />
         </div>
 
         {/* 温馨提示 */}
         <div style={{
-          padding: '16px',
-          background: '#fff9e6',
-          borderRadius: '12px',
-          border: '1px solid #ffe58f',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+          padding: theme.spacing.lg,
+          background: theme.colors.warning + '20',
+          borderRadius: theme.borderRadius.medium,
+          border: `1px solid ${theme.colors.warning}`,
+          boxShadow: theme.shadows.small
         }}>
-          <h4 style={{ margin: '0 0 12px 0', fontSize: '15px', color: '#d48806', display: 'flex', alignItems: 'center' }}>
-            <span style={{ marginRight: '8px' }}>💡</span>
+          <h4 style={{
+            margin: `0 0 ${theme.spacing.md} 0`,
+            fontSize: theme.fontSize.md,
+            color: theme.colors.warning,
+            display: 'flex',
+            alignItems: 'center'
+          }}>
+            <span style={{ marginRight: theme.spacing.sm }}>💡</span>
             温馨提示
           </h4>
           <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#8c6d1f', lineHeight: '1.8' }}>
@@ -248,39 +406,40 @@ const ConfirmBookingPage: React.FC = () => {
         bottom: 0,
         left: 0,
         right: 0,
-        padding: '12px 16px',
-        background: 'white',
-        borderTop: '1px solid #f0f0f0',
-        boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
+        padding: theme.spacing.lg,
+        background: theme.colors.bgPrimary,
+        borderTop: `1px solid ${theme.colors.borderLight}`,
+        boxShadow: theme.shadows.large
       }}>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: theme.spacing.md }}>
           <Button
             block
+            round
             onClick={handleGoBack}
             style={{
-              height: '48px',
-              fontSize: '16px',
+              height: '52px',
+              fontSize: theme.fontSize.lg,
               fontWeight: 'bold',
               flex: 1,
-              background: 'white',
-              color: '#667eea',
-              border: '2px solid #667eea'
+              background: theme.colors.bgPrimary,
+              color: theme.colors.primary,
+              border: `2px solid ${theme.colors.primary}`
             }}
           >
             返回修改
           </Button>
           <Button
             block
+            round
             type="primary"
             loading={isSubmitting}
             onClick={handleConfirmBooking}
             style={{
-              height: '48px',
-              fontSize: '16px',
+              height: '52px',
+              fontSize: theme.fontSize.lg,
               fontWeight: 'bold',
               flex: 2,
-              background: '#667eea',
-              border: 'none'
+              ...commonStyles.primaryButton
             }}
           >
             {isSubmitting ? '提交中...' : '确认预约'}

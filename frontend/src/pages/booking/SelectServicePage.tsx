@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '@/store'
 import { fetchShopServicesAsync } from '@/store/slices/shopsSlice'
 import { setService } from '@/store/slices/bookingSlice'
 import { Service } from '@/types'
+import { theme, commonStyles } from '@/styles/theme'
 
 const SelectServicePage: React.FC = () => {
   const { shopId } = useParams()
@@ -51,28 +52,76 @@ const SelectServicePage: React.FC = () => {
   }
 
   if (isLoading) {
-    return <Loading size="24px" style={{ marginTop: '100px' }} />
+    return (
+      <div style={commonStyles.loadingCenter}>
+        <Loading size="24px" color={theme.colors.primary} />
+      </div>
+    )
   }
 
   return (
-    <div style={{ paddingBottom: '80px', background: '#f8f9fa', minHeight: '100vh' }}>
+    <div style={{
+      background: theme.colors.bgSecondary,
+      minHeight: '100vh',
+      paddingBottom: '100px'
+    }}>
+      {/* 顶部导航 */}
       <NavBar
         title="选择服务"
         onClickLeft={() => navigate(-1)}
+        style={{
+          background: theme.colors.bgPrimary,
+          boxShadow: theme.shadows.small
+        }}
       />
 
-      <div style={{ padding: '16px' }}>
-        <div style={{ marginBottom: '16px', padding: '12px', background: 'white', borderRadius: '8px' }}>
-          <h3 style={{ margin: 0, fontSize: '16px', color: '#333' }}>{shop?.name}</h3>
-          <p style={{ margin: '8px 0 0', fontSize: '14px', color: '#999' }}>请选择需要的服务</p>
+      <div style={{ padding: theme.spacing.lg }}>
+        {/* 店铺信息 */}
+        <div style={{
+          ...commonStyles.card,
+          marginBottom: theme.spacing.lg,
+          background: theme.colors.primaryLight
+        }}>
+          <h3 style={{
+            margin: 0,
+            fontSize: theme.fontSize.lg,
+            color: theme.colors.primary,
+            fontWeight: 'bold'
+          }}>
+            {shop?.name}
+          </h3>
+          <p style={{
+            margin: `${theme.spacing.sm} 0 0 0`,
+            fontSize: theme.fontSize.sm,
+            color: theme.colors.textSecondary
+          }}>
+            请选择需要的服务
+          </p>
         </div>
 
         {services.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
-            暂无服务
+          <div style={commonStyles.empty}>
+            <div style={{
+              fontSize: '48px',
+              marginBottom: theme.spacing.md,
+              color: theme.colors.textTertiary
+            }}>
+              ✂️
+            </div>
+            <p style={{
+              margin: 0,
+              fontSize: theme.fontSize.base,
+              color: theme.colors.textTertiary
+            }}>
+              暂无服务
+            </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: theme.spacing.lg
+          }}>
             {services.map(service => {
               const isSelected = selectedService?.id === service.id
               return (
@@ -81,69 +130,101 @@ const SelectServicePage: React.FC = () => {
                   onClick={() => handleSelectService(service)}
                   style={{
                     position: 'relative',
-                    padding: '16px',
-                    background: isSelected ? '#f0f4ff' : 'white',
-                    borderRadius: '12px',
-                    border: isSelected ? '2px solid #667eea' : '1px solid #f0f0f0',
+                    padding: theme.spacing.lg,
+                    background: isSelected ? theme.colors.primaryLight : theme.colors.bgPrimary,
+                    borderRadius: theme.borderRadius.medium,
+                    border: isSelected ? `2px solid ${theme.colors.primary}` : `1px solid ${theme.colors.borderLight}`,
                     cursor: 'pointer',
-                    transition: 'all 0.3s',
+                    transition: 'all 0.3s ease',
                     transform: isSelected ? 'scale(0.98)' : 'scale(1)',
+                    boxShadow: isSelected ? theme.shadows.primary : theme.shadows.small
                   }}
                 >
                   {/* 选中标记 */}
                   {isSelected && (
                     <div style={{
                       position: 'absolute',
-                      top: '12px',
-                      left: '12px',
-                      width: '24px',
-                      height: '24px',
-                      borderRadius: '50%',
-                      background: '#667eea',
+                      top: theme.spacing.md,
+                      right: theme.spacing.md,
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: theme.borderRadius.round,
+                      background: theme.colors.primary,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      boxShadow: theme.shadows.medium
                     }}>
-                      <Success style={{ color: 'white', fontSize: '14px' }} />
+                      <Success style={{ color: theme.colors.bgPrimary, fontSize: '16px' }} />
                     </div>
                   )}
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
                     {/* 服务图标 */}
                     <div style={{
                       width: '60px',
                       height: '60px',
-                      borderRadius: '12px',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      borderRadius: theme.borderRadius.medium,
+                      background: isSelected ? theme.colors.primary : theme.colors.bgTertiary,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '28px',
-                      marginLeft: isSelected ? '24px' : '0'
+                      marginRight: theme.spacing.lg,
+                      transition: 'all 0.3s ease'
                     }}>
                       ✂️
                     </div>
 
                     {/* 服务信息 */}
-                    <div style={{ flex: 1, marginLeft: '16px' }}>
-                      <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
+                    <div style={{ flex: 1 }}>
+                      <h4 style={{
+                        margin: `0 0 ${theme.spacing.sm} 0`,
+                        fontSize: theme.fontSize.lg,
+                        fontWeight: 'bold',
+                        color: theme.colors.textPrimary
+                      }}>
                         {service.name}
                       </h4>
                       {service.description && (
-                        <p style={{ margin: '0 0 8px 0', fontSize: '13px', color: '#999', lineHeight: '1.5' }}>
+                        <p style={{
+                          margin: `0 0 ${theme.spacing.sm} 0`,
+                          fontSize: theme.fontSize.sm,
+                          color: theme.colors.textSecondary,
+                          lineHeight: '1.5'
+                        }}>
                           {service.description.length > 30
                             ? service.description.substring(0, 30) + '...'
                             : service.description}
                         </p>
                       )}
-                      <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: '#666' }}>
+                      <div style={{
+                        display: 'flex',
+                        gap: theme.spacing.md,
+                        fontSize: theme.fontSize.sm,
+                        color: theme.colors.textTertiary
+                      }}>
                         <span>⏱ {service.duration}分钟</span>
                       </div>
                     </div>
 
                     {/* 价格和详情按钮 */}
-                    <div style={{ marginLeft: '16px', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                      <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#ff6b6b' }}>
+                    <div style={{
+                      textAlign: 'right',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-end',
+                      gap: theme.spacing.sm
+                    }}>
+                      <div style={{
+                        fontSize: theme.fontSize.xl,
+                        fontWeight: 'bold',
+                        color: theme.colors.primary
+                      }}>
                         ¥{service.price}
                       </div>
                       <div
@@ -151,12 +232,14 @@ const SelectServicePage: React.FC = () => {
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px',
-                          fontSize: '13px',
-                          color: '#667eea',
-                          padding: '4px 8px',
-                          borderRadius: '4px',
-                          background: '#f0f4ff'
+                          gap: theme.spacing.xs,
+                          fontSize: theme.fontSize.sm,
+                          color: theme.colors.primary,
+                          padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
+                          borderRadius: theme.borderRadius.small,
+                          background: theme.colors.primaryLight,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease'
                         }}
                       >
                         <InfoO style={{ fontSize: '14px' }} />
@@ -177,32 +260,42 @@ const SelectServicePage: React.FC = () => {
         bottom: 0,
         left: 0,
         right: 0,
-        padding: '12px 16px',
-        background: 'white',
-        borderTop: '1px solid #f0f0f0',
-        boxShadow: '0 -2px 8px rgba(0,0,0,0.05)'
+        padding: theme.spacing.lg,
+        background: theme.colors.bgPrimary,
+        borderTop: `1px solid ${theme.colors.borderLight}`,
+        boxShadow: theme.shadows.large
       }}>
-        <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '14px', color: '#666' }}>
+        <div style={{
+          marginBottom: theme.spacing.md,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <span style={{
+            fontSize: theme.fontSize.base,
+            color: theme.colors.textSecondary
+          }}>
             {selectedService ? `已选：${selectedService.name}` : '请选择服务'}
           </span>
           {selectedService && (
-            <span style={{ fontSize: '20px', fontWeight: 'bold', color: '#ff6b6b' }}>
+            <span style={{
+              fontSize: theme.fontSize.xl,
+              fontWeight: 'bold',
+              color: theme.colors.primary
+            }}>
               ¥{selectedService.price}
             </span>
           )}
         </div>
         <Button
           block
-          type="primary"
+          round
           disabled={!selectedService}
           onClick={handleNext}
           style={{
-            height: '48px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            background: selectedService ? '#667eea' : '#d0d0d0',
-            border: 'none'
+            ...commonStyles.primaryButton,
+            opacity: selectedService ? 1 : 0.6,
+            cursor: selectedService ? 'pointer' : 'not-allowed'
           }}
         >
           下一步
@@ -218,52 +311,104 @@ const SelectServicePage: React.FC = () => {
         style={{ height: '60%' }}
       >
         {detailService && (
-          <div style={{ padding: '24px' }}>
-            <h2 style={{ margin: '0 0 16px 0', fontSize: '20px', color: '#333' }}>
+          <div style={{ padding: theme.spacing.xxl }}>
+            <h2 style={{
+              margin: `0 0 ${theme.spacing.lg} 0`,
+              fontSize: theme.fontSize.huge,
+              color: theme.colors.textPrimary,
+              fontWeight: 'bold'
+            }}>
               {detailService.name}
             </h2>
 
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{ color: '#999' }}>服务价格</span>
-                <span style={{ fontSize: '24px', fontWeight: 'bold', color: '#ff6b6b' }}>
+            <div style={{
+              marginBottom: theme.spacing.xxl,
+              ...commonStyles.card
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                marginBottom: theme.spacing.lg
+              }}>
+                <span style={{
+                  fontSize: theme.fontSize.base,
+                  color: theme.colors.textTertiary
+                }}>
+                  服务价格
+                </span>
+                <span style={{
+                  fontSize: theme.fontSize.huge,
+                  fontWeight: 'bold',
+                  color: theme.colors.primary
+                }}>
                   ¥{detailService.price}
                 </span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#999' }}>服务时长</span>
-                <span style={{ fontWeight: 'bold', color: '#333' }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between'
+              }}>
+                <span style={{
+                  fontSize: theme.fontSize.base,
+                  color: theme.colors.textTertiary
+                }}>
+                  服务时长
+                </span>
+                <span style={{
+                  fontSize: theme.fontSize.md,
+                  fontWeight: 'bold',
+                  color: theme.colors.textPrimary
+                }}>
                   约 {detailService.duration} 分钟
                 </span>
               </div>
             </div>
 
             {detailService.description && (
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#333' }}>服务说明</h3>
-                <p style={{ margin: 0, fontSize: '14px', color: '#666', lineHeight: '1.8' }}>
+              <div style={{ marginBottom: theme.spacing.xxl }}>
+                <h3 style={{
+                  margin: `0 0 ${theme.spacing.md} 0`,
+                  fontSize: theme.fontSize.lg,
+                  color: theme.colors.textPrimary,
+                  fontWeight: 'bold'
+                }}>
+                  服务说明
+                </h3>
+                <p style={{
+                  margin: 0,
+                  fontSize: theme.fontSize.base,
+                  color: theme.colors.textSecondary,
+                  lineHeight: '1.8'
+                }}>
                   {detailService.description}
                 </p>
               </div>
             )}
 
-            <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#333' }}>适用人群</h3>
-              <p style={{ margin: 0, fontSize: '14px', color: '#666', lineHeight: '1.8' }}>
+            <div style={{ marginBottom: theme.spacing.xxl }}>
+              <h3 style={{
+                margin: `0 0 ${theme.spacing.md} 0`,
+                fontSize: theme.fontSize.lg,
+                color: theme.colors.textPrimary,
+                fontWeight: 'bold'
+              }}>
+                适用人群
+              </h3>
+              <p style={{
+                margin: 0,
+                fontSize: theme.fontSize.base,
+                color: theme.colors.textSecondary,
+                lineHeight: '1.8'
+              }}>
                 适合所有需要{detailService.name}服务的顾客
               </p>
             </div>
 
             <Button
               block
-              type="primary"
+              round
               onClick={() => setShowDetail(false)}
-              style={{
-                height: '48px',
-                fontSize: '16px',
-                background: '#667eea',
-                border: 'none'
-              }}
+              style={commonStyles.primaryButton}
             >
               知道了
             </Button>
