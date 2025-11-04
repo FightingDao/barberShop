@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Card, Button, NavBar, Loading, Dialog, Toast } from 'react-vant'
+import { Card, Button, Loading, Dialog, Toast } from 'react-vant'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { fetchAppointmentDetailAsync, cancelAppointmentAsync } from '@/store/slices/appointmentsSlice'
 import { theme } from '@/styles/theme'
@@ -21,6 +21,7 @@ const AppointmentDetailPage: React.FC = () => {
     const result = await Dialog.confirm({
       title: '确认取消',
       message: '确定要取消这个预约吗？',
+      confirmButtonColor: theme.colors.primary,
     })
 
     if (result) {
@@ -50,16 +51,49 @@ const AppointmentDetailPage: React.FC = () => {
 
   return (
     <div style={{ background: theme.colors.bgSecondary, minHeight: '100vh' }}>
-      <NavBar 
-        title="预约详情" 
-        onClickLeft={() => navigate(-1)}
-        style={{
-          background: theme.colors.bgPrimary,
-          boxShadow: theme.shadows.small
-        }}
-      />
+      {/* 自定义顶部导航 - 固定在顶部 */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        background: theme.colors.bgPrimary,
+        boxShadow: theme.shadows.small,
+        padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        <div
+          onClick={() => navigate(-1)}
+          style={{
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: theme.colors.bgSecondary,
+            borderRadius: theme.borderRadius.round,
+            cursor: 'pointer',
+            marginRight: theme.spacing.md
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>←</span>
+        </div>
+        <h2 style={{
+          margin: 0,
+          fontSize: theme.fontSize.lg,
+          fontWeight: 'bold',
+          color: theme.colors.textPrimary
+        }}>
+          预约详情
+        </h2>
+      </div>
 
-      <div style={{ padding: theme.spacing.lg }}>
+      <div style={{ 
+        padding: theme.spacing.lg,
+        paddingTop: '60px' // 为固定的topbar留出空间
+      }}>
         <Card
           style={{
             borderRadius: theme.borderRadius.large,
@@ -175,7 +209,7 @@ const AppointmentDetailPage: React.FC = () => {
                 <span style={{ 
                   color: theme.colors.textPrimary,
                   fontSize: theme.fontSize.base 
-                }}>{currentAppointment.service?.duration || 0}分钟</span>
+                }}>{currentAppointment.service?.durationMinutes || currentAppointment.durationMinutes || 0}分钟</span>
               </div>
               <div style={{ 
                 display: 'flex', 

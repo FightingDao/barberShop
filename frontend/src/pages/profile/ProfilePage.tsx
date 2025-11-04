@@ -3,6 +3,7 @@ import { Cell, Button } from 'react-vant'
 import { useNavigate } from 'react-router-dom'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { clearAuth } from '@/store/slices/authSlice'
+import { theme } from '@/styles/theme'
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate()
@@ -15,19 +16,19 @@ const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div style={{ background: '#f8f9fa', minHeight: '100vh', paddingBottom: '60px' }}>
+    <div style={{ background: theme.colors.bgSecondary, minHeight: '100vh', paddingBottom: '60px' }}>
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: theme.button.primary.background,
         padding: '40px 20px',
-        color: 'white',
+        color: theme.colors.bgPrimary,
         textAlign: 'center'
       }}>
         <div style={{
           width: '80px',
           height: '80px',
-          borderRadius: '50%',
-          background: 'white',
-          margin: '0 auto 16px',
+          borderRadius: theme.borderRadius.round,
+          background: theme.colors.bgPrimary,
+          margin: `0 auto ${theme.spacing.md}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -35,20 +36,28 @@ const ProfilePage: React.FC = () => {
         }}>
           👤
         </div>
-        <h2 style={{ margin: 0 }}>{user?.nickname || '用户'}</h2>
-        <p style={{ margin: '8px 0 0', opacity: 0.8 }}>{user?.phone}</p>
+        <h2 style={{ margin: 0, fontSize: theme.fontSize.xxl, fontWeight: 'bold' }}>{user?.nickname || '用户'}</h2>
+        <p style={{ margin: `${theme.spacing.sm} 0 0`, opacity: 0.9, fontSize: theme.fontSize.base }}>{user?.phone}</p>
       </div>
 
-      <div style={{ margin: '16px' }}>
+      <div style={{ margin: theme.spacing.lg }}>
         <Cell.Group>
          <Cell title="我的预约" isLink onClick={() => navigate('/appointments')} />
         </Cell.Group>
 
         <Button
           block
-          type="danger"
           onClick={handleLogout}
-          style={{ marginTop: '24px' }}
+          style={{ 
+            marginTop: theme.spacing.xl,
+            height: '44px',
+            fontSize: theme.fontSize.lg,
+            fontWeight: 'bold',
+            background: theme.colors.bgPrimary,
+            color: theme.colors.error,
+            border: `2px solid ${theme.colors.error}`,
+            borderRadius: theme.borderRadius.medium
+          }}
         >
           退出登录
         </Button>

@@ -33,7 +33,7 @@ export interface Service {
   name: string
   description?: string
   price: number
-  duration: number // 分钟数
+  durationMinutes: number // 分钟数
   iconUrl?: string
   sortOrder: number
   isActive: boolean

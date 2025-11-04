@@ -42,8 +42,10 @@ const ShopDetailPage: React.FC = () => {
     }}>
       {/* 顶部导航 - 固定在顶部 */}
       <div style={{
-        position: 'sticky',
+        position: 'fixed',
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 100,
         background: theme.colors.bgPrimary,
         boxShadow: theme.shadows.small,
@@ -109,8 +111,9 @@ const ShopDetailPage: React.FC = () => {
       <div style={{
         width: '100%',
         height: '250px',
-        background: '#e0e0e0',
-        position: 'relative'
+        background: theme.colors.bgTertiary,
+        position: 'relative',
+        marginTop: '60px' // 为固定的topbar留出空间
       }}>
         {currentShop.avatarUrl ? (
           <img

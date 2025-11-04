@@ -88,8 +88,10 @@ const SelectStylistPage: React.FC = () => {
     }}>
       {/* 自定义顶部导航 */}
       <div style={{
-        position: 'sticky',
+        position: 'fixed',
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 100,
         background: theme.colors.bgPrimary,
         boxShadow: theme.shadows.small,
@@ -123,7 +125,10 @@ const SelectStylistPage: React.FC = () => {
         </h2>
       </div>
 
-      <div style={{ padding: theme.spacing.lg }}>
+      <div style={{ 
+        padding: theme.spacing.lg,
+        paddingTop: '60px' // 为固定的topbar留出空间
+      }}>
         {/* 预约信息提示 */}
         <div style={{
           ...commonStyles.card,
@@ -164,21 +169,34 @@ const SelectStylistPage: React.FC = () => {
             boxShadow: selectedStylist === 'none' ? theme.shadows.primary : theme.shadows.small
           }}
         >
+          {/* 选中标记 - 右上角三角形 */}
           {selectedStylist === 'none' && (
             <div style={{
               position: 'absolute',
-              top: theme.spacing.md,
-              right: theme.spacing.md,
-              width: '28px',
-              height: '28px',
-              borderRadius: theme.borderRadius.round,
-              background: theme.colors.primary,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: theme.shadows.medium
+              top: -1,
+              right: -1,
+              width: 0,
+              height: 0,
+              borderTop: '28px solid ' + theme.colors.primary,
+              borderLeft: '28px solid transparent',
+              borderTopRightRadius: theme.borderRadius.medium,
+              zIndex: 1
             }}>
-              <Success style={{ color: theme.colors.bgPrimary, fontSize: '16px' }} />
+              <div style={{
+                position: 'absolute',
+                top: '-24px',
+                right: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '12px',
+                height: '12px'
+              }}>
+                <Success style={{ 
+                  color: theme.colors.bgPrimary, 
+                  fontSize: '12px'
+                }} />
+              </div>
             </div>
           )}
 
@@ -275,40 +293,52 @@ const SelectStylistPage: React.FC = () => {
                     boxShadow: isSelected ? theme.shadows.primary : theme.shadows.small
                   }}
                 >
-                  {/* 选中标记 */}
-                  {isSelected && (
-                    <div style={{
-                      position: 'absolute',
-                      top: theme.spacing.md,
-                      left: theme.spacing.md,
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: theme.borderRadius.round,
-                      background: theme.colors.primary,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      zIndex: 1,
-                      boxShadow: theme.shadows.medium
-                    }}>
-                      <Success style={{ color: theme.colors.bgPrimary, fontSize: '16px' }} />
-                    </div>
-                  )}
-
                   {/* 状态徽章 */}
                   <div style={{
                     position: 'absolute',
                     top: theme.spacing.md,
-                    right: theme.spacing.md,
+                    left: theme.spacing.md,
                     padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
                     borderRadius: theme.borderRadius.small,
                     background: statusInfo.color,
                     color: theme.colors.bgPrimary,
                     fontSize: theme.fontSize.xs,
-                    fontWeight: 'bold'
+                    fontWeight: 'bold',
+                    zIndex: 1
                   }}>
                     {statusInfo.text}
                   </div>
+
+                  {/* 选中标记 - 右上角三角形 */}
+                  {isSelected && (
+                    <div style={{
+                      position: 'absolute',
+                      top: -1,
+                      right: -1,
+                      width: 0,
+                      height: 0,
+                      borderTop: '28px solid ' + theme.colors.primary,
+                      borderLeft: '28px solid transparent',
+                      borderTopRightRadius: theme.borderRadius.medium,
+                      zIndex: 2
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        top: '-24px',
+                        right: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '12px',
+                        height: '12px'
+                      }}>
+                        <Success style={{ 
+                          color: theme.colors.bgPrimary, 
+                          fontSize: '12px'
+                        }} />
+                      </div>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', alignItems: 'center' }}>
                     {/* 头像 */}
@@ -323,7 +353,6 @@ const SelectStylistPage: React.FC = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '28px',
-                        marginLeft: isSelected ? '36px' : '0',
                         cursor: canSelect ? 'pointer' : 'not-allowed',
                         transition: 'all 0.3s ease'
                       }}

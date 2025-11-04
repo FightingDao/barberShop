@@ -35,6 +35,7 @@ const ConfirmBookingPage: React.FC = () => {
     const result = await Dialog.confirm({
       title: '确认预约',
       message: '请确认预约信息无误后提交',
+      confirmButtonColor: theme.colors.primary,
     })
 
     if (!result) return
@@ -84,8 +85,10 @@ const ConfirmBookingPage: React.FC = () => {
     }}>
       {/* 自定义顶部导航 */}
       <div style={{
-        position: 'sticky',
+        position: 'fixed',
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 100,
         background: theme.colors.bgPrimary,
         boxShadow: theme.shadows.small,
@@ -119,7 +122,10 @@ const ConfirmBookingPage: React.FC = () => {
         </h2>
       </div>
 
-      <div style={{ padding: theme.spacing.lg }}>
+      <div style={{ 
+        padding: theme.spacing.lg,
+        paddingTop: '60px' // 为固定的topbar留出空间
+      }}>
         {/* 预约信息确认 */}
         <div style={{
           ...commonStyles.card,
@@ -268,7 +274,7 @@ const ConfirmBookingPage: React.FC = () => {
                 服务时长
               </span>
               <span style={{ color: theme.colors.textSecondary }}>
-                {service?.duration}分钟
+                {service?.durationMinutes}分钟
               </span>
             </div>
 
@@ -418,8 +424,8 @@ const ConfirmBookingPage: React.FC = () => {
             <span style={{ marginRight: theme.spacing.sm }}>💡</span>
             温馨提示
           </h4>
-          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: '#8c6d1f', lineHeight: '1.8' }}>
-            <li>请提前10分钟到店���避免迟到影响服务</li>
+          <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: theme.colors.warning, lineHeight: '1.8' }}>
+            <li>请提前10分钟到店避免迟到影响服务</li>
             <li>如需取消预约，请提前2小时操作</li>
             <li>请保持手机畅通，方便店铺联系</li>
             <li>到店时请向工作人员出示预约码</li>

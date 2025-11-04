@@ -11,9 +11,12 @@ function toCamel(str: string): string {
 
 // 递归转换对象键名
 function convertKeysToCamel(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj
+  }
   if (Array.isArray(obj)) {
     return obj.map(v => convertKeysToCamel(v))
-  } else if (obj !== null && obj.constructor === Object) {
+  } else if (typeof obj === 'object' && obj.constructor === Object) {
     return Object.keys(obj).reduce((result, key) => {
       const camelKey = toCamel(key)
       result[camelKey] = convertKeysToCamel(obj[key])
@@ -30,9 +33,12 @@ function toSnake(str: string): string {
 
 // 递归转换对象键名
 function convertKeysToSnake(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return obj
+  }
   if (Array.isArray(obj)) {
     return obj.map(v => convertKeysToSnake(v))
-  } else if (obj !== null && obj.constructor === Object) {
+  } else if (typeof obj === 'object' && obj.constructor === Object) {
     return Object.keys(obj).reduce((result, key) => {
       const snakeKey = toSnake(key)
       result[snakeKey] = convertKeysToSnake(obj[key])

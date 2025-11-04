@@ -308,11 +308,11 @@ const LoginPage: React.FC = () => {
                 onClick={handleQuickLogin}
                 style={{
                   height: '44px',
-                  fontSize: '15px',
-                  background: '#F7F8FA',
-                  color: '#666',
+                  fontSize: theme.fontSize.md,
+                  background: theme.colors.bgSecondary,
+                  color: theme.colors.textSecondary,
                   border: 'none',
-                  borderRadius: '12px'
+                  borderRadius: theme.borderRadius.medium
                 }}
               >
                 跳过验证码直接登录

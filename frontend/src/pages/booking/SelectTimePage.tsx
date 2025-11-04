@@ -164,8 +164,10 @@ const SelectTimePage: React.FC = () => {
     }}>
       {/* 自定义顶部导航 */}
       <div style={{
-        position: 'sticky',
+        position: 'fixed',
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 100,
         background: theme.colors.bgPrimary,
         boxShadow: theme.shadows.small,
@@ -211,7 +213,10 @@ const SelectTimePage: React.FC = () => {
         </p>
       </div>
 
-      <div style={{ padding: theme.spacing.lg }}>
+      <div style={{ 
+        padding: theme.spacing.lg,
+        paddingTop: '70px' // 为固定的topbar留出空间
+      }}>
         {/* 日期选择 - 横向滚动 */}
         <div style={{
           marginBottom: theme.spacing.lg
@@ -252,7 +257,7 @@ const SelectTimePage: React.FC = () => {
                     padding: `${theme.spacing.md} ${theme.spacing.sm}`,
                     textAlign: 'center',
                     borderRadius: theme.borderRadius.medium,
-                    background: isSelected ? theme.colors.primary : '#F5F5F5',
+                    background: isSelected ? theme.colors.primary : theme.colors.bgTertiary,
                     color: isSelected ? theme.colors.bgPrimary : theme.colors.textSecondary,
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
@@ -325,16 +330,16 @@ const SelectTimePage: React.FC = () => {
                                 ? theme.colors.primary 
                                 : isAvailable 
                                   ? theme.colors.bgPrimary 
-                                  : '#F5F5F5',
+                                  : theme.colors.bgTertiary,
                               color: isSelected 
                                 ? theme.colors.bgPrimary 
                                 : isAvailable 
                                   ? theme.colors.textSecondary 
-                                  : '#CCCCCC',
+                                  : theme.colors.textDisabled,
                               cursor: isAvailable ? 'pointer' : 'not-allowed',
                               transition: 'all 0.3s ease',
                               fontSize: theme.fontSize.md,
-                              border: `1px solid ${isSelected ? theme.colors.primary : isAvailable ? '#E0E0E0' : '#F5F5F5'}`,
+                              border: `1px solid ${isSelected ? theme.colors.primary : isAvailable ? theme.colors.borderLight : theme.colors.bgTertiary}`,
                               fontWeight: isSelected ? 'bold' : 'normal'
                             }}
                           >
@@ -378,16 +383,16 @@ const SelectTimePage: React.FC = () => {
                                 ? theme.colors.primary 
                                 : isAvailable 
                                   ? theme.colors.bgPrimary 
-                                  : '#F5F5F5',
+                                  : theme.colors.bgTertiary,
                               color: isSelected 
                                 ? theme.colors.bgPrimary 
                                 : isAvailable 
                                   ? theme.colors.textSecondary 
-                                  : '#CCCCCC',
+                                  : theme.colors.textDisabled,
                               cursor: isAvailable ? 'pointer' : 'not-allowed',
                               transition: 'all 0.3s ease',
                               fontSize: theme.fontSize.md,
-                              border: `1px solid ${isSelected ? theme.colors.primary : isAvailable ? '#E0E0E0' : '#F5F5F5'}`,
+                              border: `1px solid ${isSelected ? theme.colors.primary : isAvailable ? theme.colors.borderLight : theme.colors.bgTertiary}`,
                               fontWeight: isSelected ? 'bold' : 'normal'
                             }}
                           >

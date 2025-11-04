@@ -67,8 +67,10 @@ const SelectServicePage: React.FC = () => {
     }}>
       {/* 自定义顶部导航 */}
       <div style={{
-        position: 'sticky',
+        position: 'fixed',
         top: 0,
+        left: 0,
+        right: 0,
         zIndex: 100,
         background: theme.colors.bgPrimary,
         boxShadow: theme.shadows.small,
@@ -102,7 +104,10 @@ const SelectServicePage: React.FC = () => {
         </h2>
       </div>
 
-      <div style={{ padding: theme.spacing.lg }}>
+      <div style={{ 
+        padding: theme.spacing.lg,
+        paddingTop: '60px' // 为固定的topbar留出空间
+      }}>
         {/* 店铺信息 */}
         <div style={{
           ...commonStyles.card,
@@ -167,25 +172,6 @@ const SelectServicePage: React.FC = () => {
                     boxShadow: isSelected ? theme.shadows.primary : theme.shadows.small
                   }}
                 >
-                  {/* 选中标记 */}
-                  {isSelected && (
-                    <div style={{
-                      position: 'absolute',
-                      top: theme.spacing.md,
-                      right: theme.spacing.md,
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: theme.borderRadius.round,
-                      background: theme.colors.primary,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: theme.shadows.medium
-                    }}>
-                      <Success style={{ color: theme.colors.bgPrimary, fontSize: '16px' }} />
-                    </div>
-                  )}
-
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -235,7 +221,7 @@ const SelectServicePage: React.FC = () => {
                         fontSize: theme.fontSize.sm,
                         color: theme.colors.textTertiary
                       }}>
-                        <span>⏱ {service.duration}分钟</span>
+                        <span>⏱ {service.durationMinutes}分钟</span>
                       </div>
                     </div>
 
@@ -274,6 +260,37 @@ const SelectServicePage: React.FC = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* 选中标记 - 右上角三角形 */}
+                  {isSelected && (
+                    <div style={{
+                      position: 'absolute',
+                      top: -1,
+                      right: -1,
+                      width: 0,
+                      height: 0,
+                      borderTop: '28px solid ' + theme.colors.primary,
+                      borderLeft: '28px solid transparent',
+                      borderTopRightRadius: theme.borderRadius.medium,
+                      zIndex: 1
+                    }}>
+                      <div style={{
+                        position: 'absolute',
+                        top: '-24px',
+                        right: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '12px',
+                        height: '12px'
+                      }}>
+                        <Success style={{ 
+                          color: theme.colors.bgPrimary, 
+                          fontSize: '12px'
+                        }} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )
             })}
@@ -386,7 +403,7 @@ const SelectServicePage: React.FC = () => {
                   fontWeight: 'bold',
                   color: theme.colors.textPrimary
                 }}>
-                  约 {detailService.duration} 分钟
+                  约 {detailService.durationMinutes} 分钟
                 </span>
               </div>
             </div>

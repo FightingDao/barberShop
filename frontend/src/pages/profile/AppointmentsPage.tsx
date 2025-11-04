@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Tabs, Card, Empty, Loading, NavBar } from 'react-vant'
+import { Tabs, Card, Empty, Loading } from 'react-vant'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { fetchAppointmentsAsync } from '@/store/slices/appointmentsSlice'
 import { theme, commonStyles } from '@/styles/theme'
@@ -26,20 +26,50 @@ const AppointmentsPage: React.FC = () => {
 
   return (
     <div style={{ background: theme.colors.bgSecondary, minHeight: '100vh' }}>
-      {/* 顶部导航 */}
-      <NavBar
-        title="我的预约"
-        onClickLeft={() => navigate(-1)}
-        style={{
-          background: theme.colors.bgPrimary,
-          boxShadow: theme.shadows.small
-        }}
-      />
+      {/* 自定义顶部导航 - 固定在顶部 */}
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+        background: theme.colors.bgPrimary,
+        boxShadow: theme.shadows.small,
+        padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        <div
+          onClick={() => navigate(-1)}
+          style={{
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: theme.colors.bgSecondary,
+            borderRadius: theme.borderRadius.round,
+            cursor: 'pointer',
+            marginRight: theme.spacing.md
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>←</span>
+        </div>
+        <h2 style={{
+          margin: 0,
+          fontSize: theme.fontSize.lg,
+          fontWeight: 'bold',
+          color: theme.colors.textPrimary
+        }}>
+          我的预约
+        </h2>
+      </div>
 
       <Tabs
         color={theme.colors.primary}
         style={{
-          background: theme.colors.bgSecondary
+          background: theme.colors.bgSecondary,
+          marginTop: '60px' // 为固定的topbar留出空间
         }}
       >
         <Tabs.TabPane title="待服务" key="pending">
