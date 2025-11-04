@@ -4,16 +4,20 @@ export function useDebouncedCallback<T extends (...args: any[]) => any>(
   callback: T,
   wait = 300
 ) {
-  const timeout = useRef<ReturnType<typeof setTimeout>>()
+  const timeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   return useCallback(
     (...args: Parameters<T>) => {
       const later = () => {
-        clearTimeout(timeout.current)
+        if (timeout.current) {
+          clearTimeout(timeout.current)
+        }
         callback(...args)
       }
 
-      clearTimeout(timeout.current)
+      if (timeout.current) {
+        clearTimeout(timeout.current)
+      }
       timeout.current = setTimeout(later, wait)
     },
     [callback, wait]
