@@ -75,6 +75,10 @@ async function main() {
 
   console.log('✓ 创建店铺数量:', shops.length)
 
+  // 保存所有店铺的服务和理发师，用于后续创建预约
+  let firstShopServices: any[] = []
+  let firstShopStylists: any[] = []
+
   // 为每个店铺创建服务项目
   for (const shop of shops) {
     const services = await Promise.all([
@@ -142,6 +146,11 @@ async function main() {
 
     console.log(`✓ 店铺 ${shop.name} 创建服务数量:`, services.length)
 
+    // 保存第一个店铺的服务，用于创建预约
+    if (shop.id === shops[0].id) {
+      firstShopServices = services
+    }
+
     // 创建理发师
     const stylists = await Promise.all([
       prisma.stylist.create({
@@ -192,6 +201,11 @@ async function main() {
 
     console.log(`✓ 店铺 ${shop.name} 创建理发师数量:`, stylists.length)
 
+    // 保存第一个店铺的理发师，用于创建预约
+    if (shop.id === shops[0].id) {
+      firstShopStylists = stylists
+    }
+
     // 生成未来7天的时间段
     const today = dayjs()
     for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
@@ -233,22 +247,26 @@ async function main() {
   const futureDate = dayjs().add(2, 'day').format('YYYY-MM-DD')
   const futureTime = '14:00:00'
 
-  await prisma.appointment.create({
-    data: {
-      userId: testUser.id,
-      shopId: shops[0].id,
-      serviceId: 1, // 经典剪发
-      stylistId: 1, // 张师傅
-      appointmentDate: new Date(futureDate),
-      appointmentTime: new Date(`${futureDate}T${futureTime}`),
-      durationMinutes: 45,
-      status: 'pending',
-      notes: '请稍微剪短一些',
-      confirmationCode: generateConfirmationCode(),
-    },
-  })
+  if (firstShopServices.length > 0 && firstShopStylists.length > 0) {
+    await prisma.appointment.create({
+      data: {
+        userId: testUser.id,
+        shopId: shops[0].id,
+        serviceId: firstShopServices[0].id, // 使用实际创建的服务 ID
+        stylistId: firstShopStylists[0].id, // 使用实际创建的理发师 ID
+        appointmentDate: new Date(futureDate),
+        appointmentTime: new Date(`${futureDate}T${futureTime}`),
+        durationMinutes: 45,
+        status: 'pending',
+        notes: '请稍微剪短一些',
+        confirmationCode: generateConfirmationCode(),
+      },
+    })
 
-  console.log('✓ 创建示例预约完成')
+    console.log('✓ 创建示例预约完成')
+  } else {
+    console.log('⚠️ 跳过创建示例预约（没有可用的服务或理发师）')
+  }
 
   console.log('🎉 种子数据初始化完成!')
 }

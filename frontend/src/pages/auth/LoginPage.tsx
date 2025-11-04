@@ -86,7 +86,7 @@ const LoginPage: React.FC = () => {
         height: '200px',
         borderRadius: theme.borderRadius.round,
         background: 'rgba(255, 255, 255, 0.1)',
-        blur: '60px'
+        filter: 'blur(60px)'
       }} />
       <div style={{
         position: 'absolute',
@@ -96,7 +96,7 @@ const LoginPage: React.FC = () => {
         height: '300px',
         borderRadius: theme.borderRadius.round,
         background: 'rgba(255, 255, 255, 0.1)',
-        blur: '80px'
+        filter: 'blur(80px)'
       }} />
 
       <div style={{
@@ -300,7 +300,7 @@ const LoginPage: React.FC = () => {
           </div>
 
           {/* 快捷登录 (开发环境) */}
-          {process.env.NODE_ENV === 'development' && (
+          {import.meta.env.MODE === 'development' && (
             <>
               <Divider style={{ margin: '24px 0' }}>开发环境快捷登录</Divider>
               <Button

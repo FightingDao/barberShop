@@ -435,11 +435,8 @@ const ConfirmBookingPage: React.FC = () => {
             loading={isSubmitting}
             onClick={handleConfirmBooking}
             style={{
-              height: '52px',
-              fontSize: theme.fontSize.lg,
-              fontWeight: 'bold',
-              flex: 2,
-              ...commonStyles.primaryButton
+              ...commonStyles.primaryButton,
+              flex: 2
             }}
           >
             {isSubmitting ? '提交中...' : '确认预约'}
