@@ -69,10 +69,12 @@ const AppointmentsPage: React.FC = () => {
                   style={{
                     marginBottom: theme.spacing.lg,
                     cursor: 'pointer',
-                    borderRadius: theme.borderRadius.medium,
-                    boxShadow: theme.shadows.small,
-                    border: `1px solid ${theme.colors.borderLight}`,
-                    overflow: 'hidden'
+                    borderRadius: theme.borderRadius.large,
+                    boxShadow: theme.shadows.medium,
+                    border: 'none',
+                    overflow: 'hidden',
+                    background: theme.colors.bgPrimary,
+                    padding: theme.spacing.lg
                   }}
                 >
                   {/* 状态标签 */}
@@ -184,11 +186,13 @@ const AppointmentsPage: React.FC = () => {
                   key={apt.id}
                   style={{
                     marginBottom: theme.spacing.lg,
-                    opacity: 0.8,
-                    borderRadius: theme.borderRadius.medium,
-                    boxShadow: theme.shadows.small,
-                    border: `1px solid ${theme.colors.borderLight}`,
-                    overflow: 'hidden'
+                    opacity: 0.85,
+                    borderRadius: theme.borderRadius.large,
+                    boxShadow: theme.shadows.medium,
+                    border: 'none',
+                    overflow: 'hidden',
+                    background: theme.colors.bgPrimary,
+                    padding: theme.spacing.lg
                   }}
                 >
                   {/* 状态标签 */}

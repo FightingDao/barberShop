@@ -2,6 +2,7 @@ import React from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Tabbar } from 'react-vant'
 import { HomeO, OrdersO, UserO } from '@react-vant/icons'
+import { theme } from '@/styles/theme'
 
 const Layout: React.FC = () => {
   const navigate = useNavigate()
@@ -40,7 +41,9 @@ const Layout: React.FC = () => {
           onChange={handleTabChange}
           fixed
           placeholder
-          style={{ height: '50px' }}
+          style={{ height: '50px', boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.04)' }}
+          activeColor={theme.colors.primary}
+          inactiveColor={theme.colors.textSecondary}
         >
           <Tabbar.Item icon={<HomeO />} name="home">
             首页

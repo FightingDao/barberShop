@@ -320,14 +320,19 @@ const SelectTimePage: React.FC = () => {
                             style={{
                               padding: `${theme.spacing.md} ${theme.spacing.sm}`,
                               textAlign: 'center',
-                              borderRadius: theme.borderRadius.small,
-                              border: isSelected ? `2px solid ${theme.colors.primary}` : `1px solid ${theme.colors.borderLight}`,
-                              background: isSelected ? theme.colors.primaryLight : theme.colors.bgPrimary,
-                              color: isSelected ? theme.colors.primary : theme.colors.textPrimary,
+                              borderRadius: theme.borderRadius.medium,
+                                border: `1px solid ${theme.colors.bgTertiary}`,
+                                background: theme.colors.bgTertiary,
+                                color: theme.colors.textTertiary,
                               cursor: 'pointer',
                               transition: 'all 0.3s ease',
                               fontSize: theme.fontSize.md,
-                              fontWeight: isSelected ? 'bold' : 'normal'
+                              ...(isSelected && {
+                                border: `2px solid ${theme.colors.primary}`,
+                                background: theme.colors.primaryLight,
+                                color: theme.colors.primary,
+                                fontWeight: 'bold'
+                              })
                             }}
                           >
                             {slot.startTime.substring(0, 5)}
@@ -363,14 +368,19 @@ const SelectTimePage: React.FC = () => {
                             style={{
                               padding: `${theme.spacing.md} ${theme.spacing.sm}`,
                               textAlign: 'center',
-                              borderRadius: theme.borderRadius.small,
-                              border: isSelected ? `2px solid ${theme.colors.primary}` : `1px solid ${theme.colors.borderLight}`,
-                              background: isSelected ? theme.colors.primaryLight : theme.colors.bgPrimary,
-                              color: isSelected ? theme.colors.primary : theme.colors.textPrimary,
+                              borderRadius: theme.borderRadius.medium,
+                                border: `1px solid ${theme.colors.bgTertiary}`,
+                                background: theme.colors.bgTertiary,
+                                color: theme.colors.textTertiary,
                               cursor: 'pointer',
                               transition: 'all 0.3s ease',
                               fontSize: theme.fontSize.md,
-                              fontWeight: isSelected ? 'bold' : 'normal'
+                              ...(isSelected && {
+                                border: `2px solid ${theme.colors.primary}`,
+                                background: theme.colors.primaryLight,
+                                color: theme.colors.primary,
+                                fontWeight: 'bold'
+                              })
                             }}
                           >
                             {slot.startTime.substring(0, 5)}

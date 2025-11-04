@@ -41,9 +41,7 @@ const ProfilePage: React.FC = () => {
 
       <div style={{ margin: '16px' }}>
         <Cell.Group>
-          <Cell title="我的预约" isLink onClick={() => navigate('/appointments')} />
-          <Cell title="个人信息" isLink />
-          <Cell title="设置" isLink />
+         <Cell title="我的预约" isLink onClick={() => navigate('/appointments')} />
         </Cell.Group>
 
         <Button

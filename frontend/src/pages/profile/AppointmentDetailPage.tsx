@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Card, Button, NavBar, Loading, Dialog, Toast } from 'react-vant'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { fetchAppointmentDetailAsync, cancelAppointmentAsync } from '@/store/slices/appointmentsSlice'
+import { theme } from '@/styles/theme'
 
 const AppointmentDetailPage: React.FC = () => {
   const { id } = useParams()
@@ -48,33 +49,111 @@ const AppointmentDetailPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <NavBar title="预约详情" onClickLeft={() => navigate(-1)} />
+    <div style={{ background: theme.colors.bgSecondary, minHeight: '100vh' }}>
+      <NavBar 
+        title="预约详情" 
+        onClickLeft={() => navigate(-1)}
+        style={{
+          background: theme.colors.bgPrimary,
+          boxShadow: theme.shadows.small
+        }}
+      />
 
-      <div style={{ padding: '16px' }}>
-        <Card>
-          <div style={{ marginBottom: '12px' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>预约信息</h3>
-            <div style={{ lineHeight: '2' }}>
-              <div style={{ display: 'flex', marginBottom: '8px' }}>
-                <span style={{ color: '#999', width: '80px' }}>预约码:</span>
-                <span style={{ fontWeight: 'bold', color: '#667eea' }}>{currentAppointment.confirmationCode}</span>
+      <div style={{ padding: theme.spacing.lg }}>
+        <Card
+          style={{
+            borderRadius: theme.borderRadius.large,
+            boxShadow: theme.shadows.medium,
+            border: 'none',
+            overflow: 'hidden',
+            background: theme.colors.bgPrimary,
+            padding: theme.spacing.xl
+          }}
+        >
+          <div style={{ marginBottom: theme.spacing.lg }}>
+            <h3 style={{ 
+              margin: `0 0 ${theme.spacing.xl} 0`, 
+              fontSize: theme.fontSize.xl,
+              fontWeight: 'bold',
+              color: theme.colors.textPrimary
+            }}>预约信息</h3>
+            <div style={{ lineHeight: 2 }}>
+              <div style={{ 
+                display: 'flex', 
+                marginBottom: theme.spacing.md,
+                alignItems: 'center'
+              }}>
+                <span style={{ 
+                  color: theme.colors.textTertiary, 
+                  width: '80px',
+                  fontSize: theme.fontSize.base 
+                }}>预约码:</span>
+                <span style={{ 
+                  fontWeight: 'bold', 
+                  color: theme.colors.primary,
+                  fontSize: theme.fontSize.base 
+                }}>{currentAppointment.confirmationCode}</span>
               </div>
-              <div style={{ display: 'flex', marginBottom: '8px' }}>
-                <span style={{ color: '#999', width: '80px' }}>店铺:</span>
-                <span>{currentAppointment.shop?.name}</span>
+              <div style={{ 
+                display: 'flex', 
+                marginBottom: theme.spacing.md,
+                alignItems: 'center'  
+              }}>
+                <span style={{ 
+                  color: theme.colors.textTertiary, 
+                  width: '80px',
+                  fontSize: theme.fontSize.base 
+                }}>店铺:</span>
+                <span style={{ 
+                  color: theme.colors.textPrimary,
+                  fontSize: theme.fontSize.base,
+                  fontWeight: 'bold'
+                }}>{currentAppointment.shop?.name}</span>
               </div>
-              <div style={{ display: 'flex', marginBottom: '8px' }}>
-                <span style={{ color: '#999', width: '80px' }}>服务:</span>
-                <span>{currentAppointment.service?.name}</span>
+              <div style={{ 
+                display: 'flex', 
+                marginBottom: theme.spacing.md,
+                alignItems: 'center'  
+              }}>
+                <span style={{ 
+                  color: theme.colors.textTertiary, 
+                  width: '80px',
+                  fontSize: theme.fontSize.base 
+                }}>服务:</span>
+                <span style={{ 
+                  color: theme.colors.textPrimary,
+                  fontSize: theme.fontSize.base 
+                }}>{currentAppointment.service?.name}</span>
               </div>
-              <div style={{ display: 'flex', marginBottom: '8px' }}>
-                <span style={{ color: '#999', width: '80px' }}>理发师:</span>
-                <span>{currentAppointment.stylist?.name || '不指定'}</span>
+              <div style={{ 
+                display: 'flex', 
+                marginBottom: theme.spacing.md,
+                alignItems: 'center'  
+              }}>
+                <span style={{ 
+                  color: theme.colors.textTertiary, 
+                  width: '80px',
+                  fontSize: theme.fontSize.base 
+                }}>理发师:</span>
+                <span style={{ 
+                  color: theme.colors.textPrimary,
+                  fontSize: theme.fontSize.base 
+                }}>{currentAppointment.stylist?.name || '不指定'}</span>
               </div>
-              <div style={{ display: 'flex', marginBottom: '8px' }}>
-                <span style={{ color: '#999', width: '80px' }}>预约时间:</span>
-                <span>
+              <div style={{ 
+                display: 'flex', 
+                marginBottom: theme.spacing.md,
+                alignItems: 'center'  
+              }}>
+                <span style={{ 
+                  color: theme.colors.textTertiary, 
+                  width: '80px',
+                  fontSize: theme.fontSize.base 
+                }}>预约时间:</span>
+                <span style={{ 
+                  color: theme.colors.textPrimary,
+                  fontSize: theme.fontSize.base 
+                }}>
                   {new Date(currentAppointment.appointmentDate).toLocaleDateString('zh-CN', {
                     year: 'numeric',
                     month: '2-digit',
@@ -83,20 +162,51 @@ const AppointmentDetailPage: React.FC = () => {
                   {currentAppointment.appointmentTime}
                 </span>
               </div>
-              <div style={{ display: 'flex', marginBottom: '8px' }}>
-                <span style={{ color: '#999', width: '80px' }}>服务时长:</span>
-                <span>{currentAppointment.service?.duration || 0}分钟</span>
+              <div style={{ 
+                display: 'flex', 
+                marginBottom: theme.spacing.md,
+                alignItems: 'center'  
+              }}>
+                <span style={{ 
+                  color: theme.colors.textTertiary, 
+                  width: '80px',
+                  fontSize: theme.fontSize.base 
+                }}>服务时长:</span>
+                <span style={{ 
+                  color: theme.colors.textPrimary,
+                  fontSize: theme.fontSize.base 
+                }}>{currentAppointment.service?.duration || 0}分钟</span>
               </div>
-              <div style={{ display: 'flex', marginBottom: '8px' }}>
-                <span style={{ color: '#999', width: '80px' }}>服务价格:</span>
-                <span style={{ color: '#ff6b6b', fontWeight: 'bold' }}>¥{currentAppointment.service?.price || 0}</span>
+              <div style={{ 
+                display: 'flex', 
+                marginBottom: theme.spacing.md,
+                alignItems: 'center'  
+              }}>
+                <span style={{ 
+                  color: theme.colors.textTertiary, 
+                  width: '80px',
+                  fontSize: theme.fontSize.base 
+                }}>服务价格:</span>
+                <span style={{ 
+                  color: theme.colors.primary, 
+                  fontWeight: 'bold',
+                  fontSize: theme.fontSize.lg 
+                }}>¥{currentAppointment.service?.price || 0}</span>
               </div>
-              <div style={{ display: 'flex' }}>
-                <span style={{ color: '#999', width: '80px' }}>状态:</span>
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center'  
+              }}>
+                <span style={{ 
+                  color: theme.colors.textTertiary, 
+                  width: '80px',
+                  fontSize: theme.fontSize.base 
+                }}>状态:</span>
                 <span style={{
-                  color: currentAppointment.status === 'pending' ? '#07c160' :
-                         currentAppointment.status === 'cancelled' ? '#ff6b6b' : '#999',
-                  fontWeight: 'bold'
+                  color: currentAppointment.status === 'pending' ? theme.colors.primary :
+                         currentAppointment.status === 'cancelled' ? theme.colors.error : theme.colors.success,
+                  fontWeight: 'bold',
+                  fontSize: theme.fontSize.base
                 }}>
                   {getStatusText(currentAppointment.status)}
                 </span>
@@ -109,7 +219,13 @@ const AppointmentDetailPage: React.FC = () => {
           <Button
             block
             type="danger"
-            style={{ marginTop: '20px' }}
+            style={{ 
+              marginTop: theme.spacing.xl,
+              height: '44px',
+              fontSize: theme.fontSize.lg,
+              fontWeight: 'bold',
+              borderRadius: theme.borderRadius.medium
+            }}
             onClick={handleCancelAppointment}
           >
             取消预约
