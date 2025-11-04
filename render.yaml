@@ -1,0 +1,55 @@
+databases:
+  # PostgreSQL 数据库
+  - name: barber-shop-db
+    databaseName: barber_shop
+    user: barber_user
+    plan: free
+    region: singapore
+
+services:
+
+  # 后端 API 服务
+  - type: web
+    name: barber-shop-backend
+    env: node
+    region: singapore
+    plan: free
+    buildCommand: ./render-build.sh
+    startCommand: npm start
+    rootDir: backend
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: barber-shop-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        value: https://barber-shop-frontend.onrender.com
+    autoDeploy: true
+
+  # 前端静态站点
+  - type: web
+    name: barber-shop-frontend
+    env: static
+    region: singapore
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    rootDir: frontend
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://barber-shop-backend.onrender.com
+    autoDeploy: true
+    pullRequestPreviewsEnabled: true

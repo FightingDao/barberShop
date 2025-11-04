@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表
+model User {
+  id         Int      @id @default(autoincrement())
+  phone      String   @unique @db.VarChar(20)
+  nickname   String?  @db.VarChar(50)
+  avatarUrl  String?  @db.VarChar(255) @map("avatar_url")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // 关联关系
+  appointments Appointment[]
+
+  @@map("users")
+}
+
+// 店铺表
+model Shop {
+  id           Int      @id @default(autoincrement())
+  name         String   @db.VarChar(100)
+  address      String   @db.VarChar(255)
+  phone        String?  @db.VarChar(20)
+  description  String?  @db.Text
+  avatarUrl    String?  @db.VarChar(255) @map("avatar_url")
+  openingTime  DateTime @map("opening_time") @db.Time
+  closingTime  DateTime @map("closing_time") @db.Time
+  latitude     Decimal? @db.Decimal(10, 8)
+  longitude    Decimal? @db.Decimal(11, 8)
+  status       String   @default("active") @db.VarChar(20)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // 关联关系
+  services     Service[]
+  stylists     Stylist[]
+  appointments Appointment[]
+  timeSlots    TimeSlot[]
+
+  @@map("shops")
+}
+
+// 服务表
+model Service {
+  id             Int      @id @default(autoincrement())
+  shopId         Int      @map("shop_id")
+  name           String   @db.VarChar(100)
+  description    String?  @db.Text
+  price          Decimal  @db.Decimal(10, 2)
+  durationMinutes Int     @map("duration_minutes")
+  iconUrl        String?  @db.VarChar(255) @map("icon_url")
+  sortOrder      Int      @default(0) @map("sort_order")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // 关联关系
+  shop           Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  appointments   Appointment[]
+
+  @@map("services")
+}
+
+// 理发师表
+model Stylist {
+  id               Int      @id @default(autoincrement())
+  shopId           Int      @map("shop_id")
+  name             String   @db.VarChar(50)
+  avatarUrl        String?  @db.VarChar(255) @map("avatar_url")
+  title            String?  @db.VarChar(50)
+  experienceYears  Int?     @map("experience_years")
+  specialties      String?  @db.Text
+  status           String   @default("active") @db.VarChar(20)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  // 关联关系
+  shop             Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  appointments     Appointment[]
+  timeSlots        TimeSlot[]
+
+  @@map("stylists")
+}
+
+// 预约表
+model Appointment {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  shopId            Int      @map("shop_id")
+  serviceId         Int      @map("service_id")
+  stylistId         Int?     @map("stylist_id")
+  appointmentDate   DateTime @map("appointment_date") @db.Date
+  appointmentTime   DateTime @map("appointment_time") @db.Time
+  durationMinutes   Int      @map("duration_minutes")
+  status            String   @default("pending") @db.VarChar(20)
+  notes             String?  @db.Text
+  confirmationCode  String   @unique @map("confirmation_code") @db.VarChar(10)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // 关联关系
+  user              User    @relation(fields: [userId], references: [id])
+  shop              Shop    @relation(fields: [shopId], references: [id])
+  service           Service @relation(fields: [serviceId], references: [id])
+  stylist           Stylist? @relation(fields: [stylistId], references: [id])
+
+  @@index([userId, status])
+  @@index([appointmentDate, appointmentTime])
+  @@index([shopId, appointmentDate])
+  @@map("appointments")
+}
+
+// 时间段可用性表
+model TimeSlot {
+  id            Int      @id @default(autoincrement())
+  shopId        Int      @map("shop_id")
+  stylistId     Int?     @map("stylist_id")
+  date          DateTime @db.Date
+  startTime     DateTime @map("start_time") @db.Time
+  endTime       DateTime @map("end_time") @db.Time
+  isAvailable   Boolean  @default(true) @map("is_available")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // 关联关系
+  shop          Shop         @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  stylist       Stylist?     @relation(fields: [stylistId], references: [id])
+
+  @@unique([shopId, stylistId, date, startTime])
+  @@index([date])
+  @@map("time_slots")
+}
