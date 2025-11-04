@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Loading, NavBar } from 'react-vant'
+import { Button, Loading } from 'react-vant'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { fetchShopDetailAsync } from '@/store/slices/shopsSlice'
 import { setShop } from '@/store/slices/bookingSlice'
@@ -41,18 +41,43 @@ const ShopDetailPage: React.FC = () => {
       paddingBottom: '90px'  // 为底部按钮留出空间
     }}>
       {/* 顶部导航 - 固定在顶部 */}
-      <NavBar
-        title="店铺详情"
-        leftText=""
-        onClickLeft={() => navigate(-1)}
-        style={{
-          background: theme.colors.bgPrimary,
-          boxShadow: theme.shadows.small,
-          position: 'sticky',
-          top: 0,
-          zIndex: 100
-        }}
-        renderLeft={
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        background: theme.colors.bgPrimary,
+        boxShadow: theme.shadows.small,
+        padding: `${theme.spacing.md} ${theme.spacing.lg}`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div
+          onClick={() => navigate(-1)}
+          style={{
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: theme.colors.bgSecondary,
+            borderRadius: theme.borderRadius.round,
+            cursor: 'pointer'
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>←</span>
+        </div>
+
+        <h2 style={{
+          margin: 0,
+          fontSize: theme.fontSize.lg,
+          fontWeight: 'bold',
+          color: theme.colors.textPrimary
+        }}>
+          店铺详情
+        </h2>
+
+        <div style={{ display: 'flex', gap: theme.spacing.sm }}>
           <div style={{
             width: '32px',
             height: '32px',
@@ -60,40 +85,25 @@ const ShopDetailPage: React.FC = () => {
             alignItems: 'center',
             justifyContent: 'center',
             background: theme.colors.bgSecondary,
-            borderRadius: theme.borderRadius.round
+            borderRadius: theme.borderRadius.round,
+            cursor: 'pointer'
           }}>
-            <span style={{ fontSize: '18px' }}>←</span>
+            <span style={{ fontSize: '16px' }}>🔗</span>
           </div>
-        }
-        renderRight={
-          <div style={{ display: 'flex', gap: theme.spacing.sm }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: theme.colors.bgSecondary,
-              borderRadius: theme.borderRadius.round,
-              cursor: 'pointer'
-            }}>
-              <span style={{ fontSize: '16px' }}>🔗</span>
-            </div>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: theme.colors.bgSecondary,
-              borderRadius: theme.borderRadius.round,
-              cursor: 'pointer'
-            }}>
-              <span style={{ fontSize: '16px' }}>🤍</span>
-            </div>
+          <div style={{
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: theme.colors.bgSecondary,
+            borderRadius: theme.borderRadius.round,
+            cursor: 'pointer'
+          }}>
+            <span style={{ fontSize: '16px' }}>🤍</span>
           </div>
-        }
-      />
+        </div>
+      </div>
 
       {/* 店铺大图 */}
       <div style={{
