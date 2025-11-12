@@ -197,7 +197,14 @@ export const createAppointment = async (ctx: Context) => {
       return newAppointment
     })
 
-    success(ctx, appointment, '预约成功', undefined)
+    // 格式化日期和时间字段
+    const formattedAppointment = {
+      ...appointment,
+      appointmentDate: formatDate(appointment.appointmentDate),
+      appointmentTime: formatTime(appointment.appointmentTime),
+    }
+
+    success(ctx, formattedAppointment, '预约成功', undefined)
   } catch (error: any) {
     if (error.message === 'CONFLICT') {
       conflict(ctx, '该时间段已被预约，请选择其他时间')
@@ -245,6 +252,7 @@ export const getAppointments = async (ctx: Context) => {
           address: true,
           phone: true,
           avatarUrl: true,
+          status: true,
         },
       },
       service: {
@@ -261,12 +269,20 @@ export const getAppointments = async (ctx: Context) => {
           name: true,
           avatarUrl: true,
           title: true,
+          status: true,
         },
       },
     },
   })
 
-  success(ctx, appointments, undefined, { page, limit, total })
+  // 格式化日期和时间字段
+  const formattedAppointments = appointments.map((apt) => ({
+    ...apt,
+    appointmentDate: formatDate(apt.appointmentDate),
+    appointmentTime: formatTime(apt.appointmentTime),
+  }))
+
+  success(ctx, formattedAppointments, undefined, { page, limit, total })
 }
 
 // 获取预约详情
@@ -297,7 +313,14 @@ export const getAppointmentDetail = async (ctx: Context) => {
     return
   }
 
-  success(ctx, appointment)
+  // 格式化日期和时间字段
+  const formattedAppointment = {
+    ...appointment,
+    appointmentDate: formatDate(appointment.appointmentDate),
+    appointmentTime: formatTime(appointment.appointmentTime),
+  }
+
+  success(ctx, formattedAppointment)
 }
 
 // 取消预约

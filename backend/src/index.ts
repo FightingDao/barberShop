@@ -24,7 +24,18 @@ app.use(logger)
 // CORS配置
 app.use(
   cors({
-    origin: config.cors.origin,
+    origin: (ctx) => {
+      const requestOrigin = ctx.get('Origin')
+      const allowedOrigins = config.cors.origins
+
+      // 如果请求的origin在允许列表中，返回该origin
+      if (allowedOrigins.includes(requestOrigin)) {
+        return requestOrigin
+      }
+
+      // 否则返回第一个允许的origin（开发环境默认）
+      return allowedOrigins[0] || 'http://localhost:4001'
+    },
     credentials: true,
   })
 )

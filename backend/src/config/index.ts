@@ -20,7 +20,7 @@ export const config = {
 
   // CORS配置
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:4001',
+    origins: (process.env.CORS_ORIGIN || 'http://localhost:4001').split(',').map(o => o.trim()),
   },
 
   // 日志配置
