@@ -31,7 +31,11 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   });
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -65,10 +69,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
               const SizedBox(height: 8),
               const Text(
                 '找到最适合你的理发店',
-                style: TextStyle(
-                  color: Color(0xE6FFFFFF),
-                  fontSize: 16,
-                ),
+                style: TextStyle(color: Color(0xE6FFFFFF), fontSize: 16),
               ),
               const SizedBox(height: 24),
               ValueListenableBuilder<TextEditingValue>(
@@ -112,7 +113,9 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                                 ),
                                 onPressed: onClearSearch,
                               ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                        ),
                       ),
                     ),
                   );
@@ -196,62 +199,33 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
                   sliver: shopProvider.isLoading && shopProvider.shops.isEmpty
                       ? const SliverFillRemaining(
-                          child: Center(child: LoadingWidget(message: '加载中...')),
+                          child: Center(
+                            child: LoadingWidget(message: '加载中...'),
+                          ),
                         )
                       : SliverGrid(
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 1,
-                            mainAxisSpacing: 16,
-                            childAspectRatio: 1.1,
-                          ),
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) {
-                              final shop = shopProvider.shops[index];
-                              return _DesignShopCard(
-                                shop: shop,
-                                onTap: () => context.go('/shop/${shop.id}'),
-                              );
-                            },
-                            childCount: shopProvider.shops.length,
-                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 1,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 1.1,
+                              ),
+                          delegate: SliverChildBuilderDelegate((
+                            context,
+                            index,
+                          ) {
+                            final shop = shopProvider.shops[index];
+                            return _DesignShopCard(
+                              shop: shop,
+                              onTap: () => context.go('/shop/${shop.id}'),
+                            );
+                          }, childCount: shopProvider.shops.length),
                         ),
                 ),
               ],
             ),
           );
         },
-      ),
-      bottomNavigationBar: Container(
-        height: 80,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Color(0x1A000000),
-              offset: Offset(0, -2),
-              blurRadius: 8,
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _BottomNavItem(
-                icon: LucideIcons.house,
-                label: '首页',
-                isActive: true,
-                onTap: () {},
-              ),
-              _BottomNavItem(
-                icon: LucideIcons.userRound,
-                label: '我的',
-                isActive: false,
-                onTap: () => context.go('/profile'),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -262,15 +236,12 @@ class _DesignShopCard extends StatelessWidget {
   final Shop shop;
   final VoidCallback onTap;
 
-  const _DesignShopCard({
-    required this.shop,
-    required this.onTap,
-  });
+  const _DesignShopCard({required this.shop, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final isOpen = shop.status == 'active' || shop.status == 'open';
-    
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -332,16 +303,17 @@ class _DesignShopCard extends StatelessWidget {
                             topRight: Radius.circular(16),
                           ),
                         ),
-                        child: const Center(
-                          child: _ClosedBadge(),
-                        ),
+                        child: const Center(child: _ClosedBadge()),
                       ),
                     // 距离标签 - 右上角
                     Positioned(
                       top: 12,
                       right: 12,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.9),
                           borderRadius: BorderRadius.circular(12),
@@ -356,7 +328,11 @@ class _DesignShopCard extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(LucideIcons.mapPin, size: 12, color: Color(0xFF6B7280)),
+                            const Icon(
+                              LucideIcons.mapPin,
+                              size: 12,
+                              color: Color(0xFF6B7280),
+                            ),
                             const SizedBox(width: 2),
                             Text(
                               shop.distance ?? '1.2km',
@@ -397,7 +373,11 @@ class _DesignShopCard extends StatelessWidget {
                     // 地址
                     Row(
                       children: [
-                        const Icon(LucideIcons.mapPin, size: 16, color: Color(0xFF4B5563)),
+                        const Icon(
+                          LucideIcons.mapPin,
+                          size: 16,
+                          color: Color(0xFF4B5563),
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -430,7 +410,11 @@ class _DesignShopCard extends StatelessWidget {
                         if (isOpen)
                           Row(
                             children: [
-                              const Icon(LucideIcons.clock, size: 16, color: Color(0xFF059669)),
+                              const Icon(
+                                LucideIcons.clock,
+                                size: 16,
+                                color: Color(0xFF059669),
+                              ),
                               const SizedBox(width: 4),
                               const Text(
                                 '营业中',
@@ -496,47 +480,6 @@ class _ClosedBadge extends StatelessWidget {
           color: Color(0xFF111827),
           fontWeight: FontWeight.w600,
         ),
-      ),
-    );
-  }
-}
-
-// 底部导航项
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  const _BottomNavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 24,
-            color: isActive ? const Color(0xFFFF385C) : const Color(0xFF9CA3AF),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isActive ? const Color(0xFFFF385C) : const Color(0xFF9CA3AF),
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
       ),
     );
   }

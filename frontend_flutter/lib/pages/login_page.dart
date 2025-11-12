@@ -54,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
         ToastUtils.show('登录成功');
         context.go('/');
       } else {
-        ToastUtils.show(authProvider.errorMessage ?? '登录失败');
+        // ToastUtils.show(authProvider.errorMessage ?? '登录失败');
       }
     } catch (e) {
       ToastUtils.show('网络错误，请重试');

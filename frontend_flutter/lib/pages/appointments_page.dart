@@ -65,9 +65,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.error,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.error),
             child: const Text('确认取消', style: TextStyle(color: Colors.white)),
           ),
         ],
@@ -82,9 +80,9 @@ class _AppointmentsPageState extends State<AppointmentsPage>
     if (!mounted) return;
 
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('预约已取消')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('预约已取消')));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -154,7 +152,14 @@ class _AppointmentsPageState extends State<AppointmentsPage>
         children: [
           // 返回按钮
           GestureDetector(
-            onTap: () => context.go('/'),
+            onTap: () {
+              final router = GoRouter.of(context);
+              if (router.canPop()) {
+                context.pop();
+              } else {
+                context.go('/');
+              }
+            },
             child: Container(
               width: 32,
               height: 32,
@@ -215,17 +220,11 @@ class _AppointmentsPageState extends State<AppointmentsPage>
     }
 
     if (errorMessage != null) {
-      return AppErrorWidget(
-        message: errorMessage,
-        onRetry: _handleRefresh,
-      );
+      return AppErrorWidget(message: errorMessage, onRetry: _handleRefresh);
     }
 
     if (appointments.isEmpty) {
-      return const EmptyWidget(
-        message: '暂无预约记录',
-        icon: Icons.event_busy,
-      );
+      return const EmptyWidget(message: '暂无预约记录', icon: Icons.event_busy);
     }
 
     return RefreshIndicator(
@@ -289,7 +288,10 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                   ],
                 ),
                 Text(
-                  '${appointment.appointmentDate} ${appointment.appointmentTime.substring(0, 5)}',
+                  _buildDateTimeLabel(
+                    appointment.appointmentDate,
+                    appointment.appointmentTime,
+                  ),
                   style: const TextStyle(
                     fontSize: AppTheme.fontSizeSm,
                     color: AppTheme.textSecondary,
@@ -308,7 +310,11 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                 // 店铺信息
                 Row(
                   children: [
-                    const Icon(Icons.store, size: 18, color: AppTheme.textSecondary),
+                    const Icon(
+                      Icons.store,
+                      size: 18,
+                      color: AppTheme.textSecondary,
+                    ),
                     const SizedBox(width: AppTheme.paddingSm),
                     Expanded(
                       child: Column(
@@ -339,18 +345,20 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                 // 服务信息
                 Row(
                   children: [
-                    const Icon(Icons.content_cut, size: 18, color: AppTheme.textSecondary),
+                    const Icon(
+                      Icons.content_cut,
+                      size: 18,
+                      color: AppTheme.textSecondary,
+                    ),
                     const SizedBox(width: AppTheme.paddingSm),
                     Expanded(
                       child: Text(
                         service?.name ?? '未知服务',
-                        style: const TextStyle(
-                          fontSize: AppTheme.fontSizeBase,
-                        ),
+                        style: const TextStyle(fontSize: AppTheme.fontSizeBase),
                       ),
                     ),
                     Text(
-                      '¥${service?.price.toStringAsFixed(0) ?? '0'}',
+                      _formatPrice(service?.price),
                       style: const TextStyle(
                         fontSize: AppTheme.fontSizeMd,
                         fontWeight: FontWeight.bold,
@@ -365,7 +373,11 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                   const SizedBox(height: AppTheme.paddingSm),
                   Row(
                     children: [
-                      const Icon(Icons.person, size: 18, color: AppTheme.textSecondary),
+                      const Icon(
+                        Icons.person,
+                        size: 18,
+                        color: AppTheme.textSecondary,
+                      ),
                       const SizedBox(width: AppTheme.paddingSm),
                       Text(
                         stylist.name,
@@ -379,7 +391,8 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                 ],
 
                 // 备注
-                if (appointment.notes != null && appointment.notes!.isNotEmpty) ...[
+                if (appointment.notes != null &&
+                    appointment.notes!.isNotEmpty) ...[
                   const SizedBox(height: AppTheme.paddingMd),
                   Container(
                     padding: const EdgeInsets.all(AppTheme.paddingSm),
@@ -390,7 +403,11 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.note, size: 16, color: AppTheme.textTertiary),
+                        const Icon(
+                          Icons.note,
+                          size: 16,
+                          color: AppTheme.textTertiary,
+                        ),
                         const SizedBox(width: AppTheme.paddingSm),
                         Expanded(
                           child: Text(
@@ -417,7 +434,9 @@ class _AppointmentsPageState extends State<AppointmentsPage>
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: AppTheme.error),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.radiusSm,
+                          ),
                         ),
                       ),
                       child: const Text(
@@ -478,5 +497,20 @@ class _AppointmentsPageState extends State<AppointmentsPage>
       default:
         return '未知状态';
     }
+  }
+
+  String _buildDateTimeLabel(String? date, String? time) {
+    final safeDate = date ?? '';
+    if (time == null || time.isEmpty) {
+      return safeDate;
+    }
+
+    final normalized = time.length >= 5 ? time.substring(0, 5) : time;
+    return '$safeDate $normalized';
+  }
+
+  String _formatPrice(double? price) {
+    if (price == null) return '¥0';
+    return '¥${price.toStringAsFixed(0)}';
   }
 }

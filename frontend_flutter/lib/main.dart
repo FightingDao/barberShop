@@ -21,6 +21,7 @@ import 'pages/confirm_booking_page.dart';
 import 'pages/booking_success_page.dart';
 import 'pages/appointments_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/app_shell.dart';
 
 void main() async {
   // 确保Flutter绑定初始化
@@ -86,15 +87,31 @@ class MyApp extends StatelessWidget {
       },
       routes: [
         // 登录页
-        GoRoute(
-          path: '/login',
-          builder: (context, state) => const LoginPage(),
+        GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+        // 底部导航壳
+        StatefulShellRoute.indexedStack(
+          builder: (context, state, navigationShell) =>
+              AppShell(navigationShell: navigationShell),
+          branches: [
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/',
+                  builder: (context, state) => const HomePage(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/profile',
+                  builder: (context, state) => const ProfilePage(),
+                ),
+              ],
+            ),
+          ],
         ),
         // 首页（店铺列表）
-        GoRoute(
-          path: '/',
-          builder: (context, state) => const HomePage(),
-        ),
         // 店铺详情页
         GoRoute(
           path: '/shop/:id',
@@ -144,11 +161,6 @@ class MyApp extends StatelessWidget {
         GoRoute(
           path: '/appointments',
           builder: (context, state) => const AppointmentsPage(),
-        ),
-        // 个人中心页
-        GoRoute(
-          path: '/profile',
-          builder: (context, state) => const ProfilePage(),
         ),
       ],
     );

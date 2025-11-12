@@ -40,34 +40,57 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final mediaPadding = MediaQuery.of(context).padding;
+
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FA),
-      body: Consumer<AuthProvider>(
-        builder: (context, authProvider, _) {
-          final user = authProvider.user;
+      body: Stack(
+        children: [
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _ProfileBackground(topInset: mediaPadding.top),
+          ),
+          SafeArea(
+            bottom: false,
+            child: Consumer<AuthProvider>(
+              builder: (context, authProvider, _) {
+                final user = authProvider.user;
 
-          return Column(
-            children: [
-              _ProfileHeader(name: user?.nickname ?? '您好'),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                return SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _AppointmentCard(
-                        onTap: () => context.go('/appointments'),
-                      ),
                       const SizedBox(height: 16),
-                      _LogoutCard(onTap: () => _handleLogout(context)),
-                      const SizedBox(height: 32),
-                      const _VersionInfo(),
+                      _ProfileHeader(name: user?.nickname ?? '您好'),
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(
+                          16,
+                          32,
+                          16,
+                          mediaPadding.bottom + 48,
+                        ),
+                        child: Column(
+                          children: [
+                            _AppointmentCard(
+                              onTap: () => context.push('/appointments'),
+                            ),
+                            const SizedBox(height: 16),
+                            _LogoutCard(onTap: () => _handleLogout(context)),
+                            const SizedBox(height: 32),
+                            const _VersionInfo(),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ),
-            ],
-          );
-        },
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -80,20 +103,8 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFF472B6), Color(0xFFFB7185)],
-        ),
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(40),
-          bottomRight: Radius.circular(40),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(24, 72, 24, 40),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -105,13 +116,17 @@ class _ProfileHeader extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-            child: const Icon(LucideIcons.userRound, size: 36, color: Color(0xFFFF385C)),
+            child: const Icon(
+              LucideIcons.userRound,
+              size: 36,
+              color: Color(0xFFFF385C),
+            ),
           ),
           const SizedBox(height: 20),
           Text(
@@ -125,12 +140,34 @@ class _ProfileHeader extends StatelessWidget {
           const SizedBox(height: 6),
           const Text(
             '欢迎使用理发预约服务',
-            style: TextStyle(
-              color: Color(0xE6FFFFFF),
-              fontSize: 16,
-            ),
+            style: TextStyle(color: Color(0xE6FFFFFF), fontSize: 16),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ProfileBackground extends StatelessWidget {
+  final double topInset;
+
+  const _ProfileBackground({required this.topInset});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 280 + topInset,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF472B6), Color(0xFFFB7185)],
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+        ),
       ),
     );
   }
@@ -173,7 +210,11 @@ class _AppointmentCard extends StatelessWidget {
                   borderRadius: BorderRadius.all(Radius.circular(18)),
                 ),
                 child: const Center(
-                  child: Icon(LucideIcons.calendar, size: 26, color: Color(0xFFFF385C)),
+                  child: Icon(
+                    LucideIcons.calendar,
+                    size: 26,
+                    color: Color(0xFFFF385C),
+                  ),
                 ),
               ),
               const SizedBox(width: 18),
@@ -192,10 +233,7 @@ class _AppointmentCard extends StatelessWidget {
                     SizedBox(height: 6),
                     Text(
                       '查看预约记录',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6B7280),
-                      ),
+                      style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
                     ),
                   ],
                 ),
@@ -266,10 +304,7 @@ class _VersionInfo extends StatelessWidget {
       children: [
         Text(
           '理发预约 v1.0.0',
-          style: TextStyle(
-            fontSize: 14,
-            color: Color(0xFFA0AEC0),
-          ),
+          style: TextStyle(fontSize: 14, color: Color(0xFFA0AEC0)),
         ),
       ],
     );
