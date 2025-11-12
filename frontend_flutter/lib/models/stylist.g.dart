@@ -8,7 +8,7 @@ part of 'stylist.dart';
 
 Stylist _$StylistFromJson(Map<String, dynamic> json) => Stylist(
   id: (json['id'] as num).toInt(),
-  shopId: (json['shopId'] as num).toInt(),
+  shopId: (json['shopId'] as num?)?.toInt(),
   name: json['name'] as String,
   avatarUrl: json['avatarUrl'] as String?,
   title: json['title'] as String?,

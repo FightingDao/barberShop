@@ -8,7 +8,7 @@ part of 'service.dart';
 
 Service _$ServiceFromJson(Map<String, dynamic> json) => Service(
   id: (json['id'] as num).toInt(),
-  shopId: (json['shopId'] as num).toInt(),
+  shopId: (json['shopId'] as num?)?.toInt(),
   name: json['name'] as String,
   description: json['description'] as String?,
   price: const StringToDoubleRequiredConverter().fromJson(json['price']),

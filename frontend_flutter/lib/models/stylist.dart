@@ -16,7 +16,7 @@ enum StylistStatus {
 @JsonSerializable()
 class Stylist {
   final int id;
-  final int shopId;
+  final int? shopId;  // 改为可选，因为API响应中不包含此字段
   final String name;
   final String? avatarUrl;
   final String? title;
@@ -31,7 +31,7 @@ class Stylist {
 
   Stylist({
     required this.id,
-    required this.shopId,
+    this.shopId,  // 改为可选
     required this.name,
     this.avatarUrl,
     this.title,
