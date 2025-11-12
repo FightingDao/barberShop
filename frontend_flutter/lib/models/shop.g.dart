@@ -24,6 +24,11 @@ Shop _$ShopFromJson(Map<String, dynamic> json) => Shop(
   updatedAt: json['updatedAt'] == null
       ? null
       : DateTime.parse(json['updatedAt'] as String),
+  distance: json['distance'] as String?,
+  rating: (json['rating'] as num?)?.toDouble(),
+  reviewCount: (json['reviewCount'] as num?)?.toInt(),
+  avgPrice: (json['avgPrice'] as num?)?.toInt(),
+  image: json['image'] as String?,
 );
 
 Map<String, dynamic> _$ShopToJson(Shop instance) => <String, dynamic>{
@@ -40,4 +45,9 @@ Map<String, dynamic> _$ShopToJson(Shop instance) => <String, dynamic>{
   'status': instance.status,
   'createdAt': instance.createdAt?.toIso8601String(),
   'updatedAt': instance.updatedAt?.toIso8601String(),
+  'distance': instance.distance,
+  'rating': instance.rating,
+  'reviewCount': instance.reviewCount,
+  'avgPrice': instance.avgPrice,
+  'image': instance.image,
 };

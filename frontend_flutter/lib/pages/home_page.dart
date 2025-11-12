@@ -1,19 +1,136 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
-import '../config/app_theme.dart';
-import '../providers/auth_provider.dart';
+import '../models/shop.dart';
 import '../providers/shop_provider.dart';
 import '../widgets/widgets.dart';
 
-/// 首页（店铺列表）
-/// 显示所有可用的理发店列表，支持搜索功能
+/// 首页（店铺列表）- 严格按照设计稿还原
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
+}
+
+class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double minExtent;
+  final double maxExtent;
+  final TextEditingController searchController;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onClearSearch;
+
+  _HomeHeaderDelegate({
+    required this.minExtent,
+    required this.maxExtent,
+    required this.searchController,
+    required this.onSearchChanged,
+    required this.onClearSearch,
+  });
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF472B6), Color(0xFFFB7185)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x1A000000),
+            offset: Offset(0, 4),
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 28, 16, 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                '发现美好',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '找到最适合你的理发店',
+                style: TextStyle(
+                  color: Color(0xE6FFFFFF),
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 24),
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: searchController,
+                builder: (context, value, _) {
+                  return Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(25),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x1A000000),
+                          offset: Offset(0, 8),
+                          blurRadius: 25,
+                        ),
+                      ],
+                    ),
+                    child: TextField(
+                      controller: searchController,
+                      onChanged: onSearchChanged,
+                      decoration: InputDecoration(
+                        hintText: '搜索理发店...',
+                        hintStyle: const TextStyle(color: Color(0xFF9CA3AF)),
+                        border: InputBorder.none,
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.only(left: 12, right: 8),
+                          child: Icon(
+                            LucideIcons.search,
+                            size: 20,
+                            color: Color(0xFF9CA3AF),
+                          ),
+                        ),
+                        suffixIcon: value.text.isEmpty
+                            ? null
+                            : IconButton(
+                                icon: const Icon(
+                                  LucideIcons.x,
+                                  size: 18,
+                                  color: Color(0xFF9CA3AF),
+                                ),
+                                onPressed: onClearSearch,
+                              ),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {
+    return oldDelegate.searchController != searchController ||
+        oldDelegate.minExtent != minExtent ||
+        oldDelegate.maxExtent != maxExtent;
+  }
 }
 
 class _HomePageState extends State<HomePage> {
@@ -35,7 +152,6 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
-  /// 初始化数据
   void _initializeData() {
     _shopProvider = context.read<ShopProvider>();
     if (!_isInitialized) {
@@ -44,7 +160,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// 搜索店铺
   Future<void> _searchShops(String keyword) async {
     if (keyword.isEmpty) {
       _shopProvider.fetchShops();
@@ -53,161 +168,372 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  /// 退出登录
-  Future<void> _logout() async {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认退出'),
-        content: const Text('是否确认退出登录？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.read<AuthProvider>().logout();
-              context.go('/login');
-            },
-            child: const Text('确认', style: TextStyle(color: AppTheme.error)),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bgSecondary,
-      appBar: AppBar(
-        title: const Text('理发店预约'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => context.push('/profile'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.calendar_month),
-            onPressed: () => context.push('/appointments'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _logout,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // 搜索栏
-          _buildSearchBar(),
-          // 店铺列表
-          Expanded(
-            child: Consumer<ShopProvider>(
-              builder: (context, shopProvider, _) {
-                // 加载中状态
-                if (shopProvider.isLoading && shopProvider.shops.isEmpty) {
-                  return const LoadingWidget(message: '加载中...');
-                }
-
-                // 错误状态
-                if (shopProvider.errorMessage != null &&
-                    shopProvider.shops.isEmpty) {
-                  return AppErrorWidget(
-                    message: shopProvider.errorMessage ?? '加载失败',
-                    onRetry: () {
+      backgroundColor: const Color(0xFFF7F8FA),
+      body: Consumer<ShopProvider>(
+        builder: (context, shopProvider, _) {
+          return RefreshIndicator(
+            onRefresh: () => _searchShops(_searchController.text),
+            child: CustomScrollView(
+              slivers: [
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _HomeHeaderDelegate(
+                    minExtent: 232,
+                    maxExtent: 232,
+                    searchController: _searchController,
+                    onSearchChanged: _searchShops,
+                    onClearSearch: () {
                       _searchController.clear();
-                      _shopProvider.fetchShops();
-                    },
-                  );
-                }
-
-                // 空状态
-                if (shopProvider.shops.isEmpty) {
-                  return EmptyWidget(
-                    message: '暂无店铺',
-                    icon: Icons.store_outlined,
-                  );
-                }
-
-                // 店铺列表
-                return RefreshIndicator(
-                  onRefresh: () => _searchShops(_searchController.text),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(AppTheme.spacingLG),
-                    itemCount: shopProvider.shops.length,
-                    itemBuilder: (context, index) {
-                      final shop = shopProvider.shops[index];
-                      return ShopCard(
-                        shop: shop,
-                        onTap: () => context.push('/shop/${shop.id}'),
-                      );
+                      _searchShops('');
                     },
                   ),
-                );
-              },
+                ),
+                // 店铺列表
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                  sliver: shopProvider.isLoading && shopProvider.shops.isEmpty
+                      ? const SliverFillRemaining(
+                          child: Center(child: LoadingWidget(message: '加载中...')),
+                        )
+                      : SliverGrid(
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 1,
+                            mainAxisSpacing: 16,
+                            childAspectRatio: 1.1,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final shop = shopProvider.shops[index];
+                              return _DesignShopCard(
+                                shop: shop,
+                                onTap: () => context.go('/shop/${shop.id}'),
+                              );
+                            },
+                            childCount: shopProvider.shops.length,
+                          ),
+                        ),
+                ),
+              ],
             ),
+          );
+        },
+      ),
+      bottomNavigationBar: Container(
+        height: 80,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x1A000000),
+              offset: Offset(0, -2),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _BottomNavItem(
+                icon: LucideIcons.house,
+                label: '首页',
+                isActive: true,
+                onTap: () {},
+              ),
+              _BottomNavItem(
+                icon: LucideIcons.userRound,
+                label: '我的',
+                isActive: false,
+                onTap: () => context.go('/profile'),
+              ),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+// 严格按照设计稿的店铺卡片
+class _DesignShopCard extends StatelessWidget {
+  final Shop shop;
+  final VoidCallback onTap;
+
+  const _DesignShopCard({
+    required this.shop,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isOpen = shop.status == 'active' || shop.status == 'open';
+    
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16), // rounded-2xl
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A000000),
+              offset: Offset(0, 4),
+              blurRadius: 25,
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 图片区域
+            Expanded(
+              flex: 3,
+              child: Container(
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Stack(
+                  children: [
+                    // 店铺图片
+                    ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(16),
+                        topRight: Radius.circular(16),
+                      ),
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: shop.image != null && shop.image!.isNotEmpty
+                            ? Image.network(
+                                shop.image!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return _buildPlaceholderImage();
+                                },
+                              )
+                            : _buildPlaceholderImage(),
+                      ),
+                    ),
+                    // 关闭状态遮罩
+                    if (!isOpen)
+                      Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.5),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(16),
+                            topRight: Radius.circular(16),
+                          ),
+                        ),
+                        child: const Center(
+                          child: _ClosedBadge(),
+                        ),
+                      ),
+                    // 距离标签 - 右上角
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x1A000000),
+                              offset: Offset(0, 2),
+                              blurRadius: 4,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(LucideIcons.mapPin, size: 12, color: Color(0xFF6B7280)),
+                            const SizedBox(width: 2),
+                            Text(
+                              shop.distance ?? '1.2km',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6B7280),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // 信息区域
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 店铺名称
+                    Text(
+                      shop.name,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Color(0xFF111827), // text-gray-900
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                    // 地址
+                    Row(
+                      children: [
+                        const Icon(LucideIcons.mapPin, size: 16, color: Color(0xFF4B5563)),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            shop.address,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF4B5563), // text-gray-600
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    // 底部信息
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // 价格
+                        Text(
+                          '¥${shop.avgPrice ?? 88}起',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFFFF385C), // 设计稿中的红色
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        // 营业状态
+                        if (isOpen)
+                          Row(
+                            children: [
+                              const Icon(LucideIcons.clock, size: 16, color: Color(0xFF059669)),
+                              const SizedBox(width: 4),
+                              const Text(
+                                '营业中',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF059669), // text-green-600
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  /// 构建搜索栏
-  Widget _buildSearchBar() {
+  Widget _buildPlaceholderImage() {
     return Container(
-      color: AppTheme.bgPrimary,
-      padding: const EdgeInsets.all(AppTheme.spacingLG),
-      child: Row(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF472B6), Color(0xFFFB7185)],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          shop.name.isNotEmpty ? shop.name.substring(0, 1) : '店',
+          style: const TextStyle(
+            fontSize: 32,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ClosedBadge extends StatelessWidget {
+  const _ClosedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Text(
+        '已打烊',
+        style: TextStyle(
+          fontSize: 14,
+          color: Color(0xFF111827),
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+// 底部导航项
+class _BottomNavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _BottomNavItem({
+    required this.icon,
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppTheme.bgSecondary,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-                border: Border.all(color: AppTheme.border),
-              ),
-              child: TextField(
-                controller: _searchController,
-                onChanged: _searchShops,
-                decoration: InputDecoration(
-                  hintText: '搜索店铺...',
-                  hintStyle: const TextStyle(
-                    color: AppTheme.textTertiary,
-                    fontSize: AppTheme.fontSizeBase,
-                  ),
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: AppTheme.textSecondary,
-                    size: 20,
-                  ),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? GestureDetector(
-                          onTap: () {
-                            _searchController.clear();
-                            _searchShops('');
-                          },
-                          child: const Icon(
-                            Icons.clear,
-                            color: AppTheme.textSecondary,
-                            size: 20,
-                          ),
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.spacingMD,
-                    vertical: AppTheme.spacingSM,
-                  ),
-                ),
-                style: const TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: AppTheme.fontSizeBase,
-                ),
-              ),
+          Icon(
+            icon,
+            size: 24,
+            color: isActive ? const Color(0xFFFF385C) : const Color(0xFF9CA3AF),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: isActive ? const Color(0xFFFF385C) : const Color(0xFF9CA3AF),
+              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
             ),
           ),
         ],

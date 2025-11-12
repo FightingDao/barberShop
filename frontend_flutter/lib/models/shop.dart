@@ -24,6 +24,13 @@ class Shop {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  // UI Design fields
+  final String? distance;
+  final double? rating;
+  final int? reviewCount;
+  final int? avgPrice;
+  final String? image;
+
   Shop({
     required this.id,
     required this.name,
@@ -38,6 +45,11 @@ class Shop {
     required this.status,
     this.createdAt,
     this.updatedAt,
+    this.distance,
+    this.rating,
+    this.reviewCount,
+    this.avgPrice,
+    this.image,
   });
 
   factory Shop.fromJson(Map<String, dynamic> json) => _$ShopFromJson(json);

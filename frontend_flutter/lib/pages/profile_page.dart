@@ -1,422 +1,277 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
+import 'package:provider/provider.dart';
 
-import '../config/app_theme.dart';
-import '../providers/providers.dart';
+import '../providers/auth_provider.dart';
 
-/// 个人中心页
-/// 显示用户信息和应用设置
+/// 个人中心页 - 严格按照设计稿还原
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
-  /// 退出登录
-  void _handleLogout(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+  Future<void> _handleLogout(BuildContext context) async {
+    final shouldLogout = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('确认退出'),
-        content: const Text('确定要退出登录吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primary,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('确认退出'),
+          content: const Text('确定要退出登录吗？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('取消'),
             ),
-            child: const Text('确定', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('退出'),
+            ),
+          ],
+        );
+      },
     );
 
-    if (confirmed != true || !context.mounted) return;
-
-    final authProvider = context.read<AuthProvider>();
-    await authProvider.logout();
-
-    if (!context.mounted) return;
-    context.go('/login');
+    if (shouldLogout == true && context.mounted) {
+      await context.read<AuthProvider>().logout();
+      if (context.mounted) {
+        context.go('/login');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bgSecondary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 自定义顶部导航
-            _buildAppBar(context),
+      backgroundColor: const Color(0xFFF7F8FA),
+      body: Consumer<AuthProvider>(
+        builder: (context, authProvider, _) {
+          final user = authProvider.user;
 
-            // 内容区域
-            Expanded(
-              child: Consumer<AuthProvider>(
-                builder: (context, authProvider, _) {
-                  return ListView(
-                    padding: const EdgeInsets.all(AppTheme.paddingLg),
+          return Column(
+            children: [
+              _ProfileHeader(name: user?.nickname ?? '您好'),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                  child: Column(
                     children: [
-                      // 用户信息卡片
-                      _buildUserInfoCard(authProvider),
-                      const SizedBox(height: AppTheme.paddingLg),
-
-                      // 功能列表
-                      _buildFunctionCard(context),
-                      const SizedBox(height: AppTheme.paddingLg),
-
-                      // 关于应用
-                      _buildAboutCard(),
-                      const SizedBox(height: AppTheme.paddingLg),
-
-                      // 退出登录按钮
-                      _buildLogoutButton(context),
+                      _AppointmentCard(
+                        onTap: () => context.go('/appointments'),
+                      ),
+                      const SizedBox(height: 16),
+                      _LogoutCard(onTap: () => _handleLogout(context)),
+                      const SizedBox(height: 32),
+                      const _VersionInfo(),
                     ],
-                  );
-                },
+                  ),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }
+}
 
-  /// 构建顶部导航栏
-  Widget _buildAppBar(BuildContext context) {
+class _ProfileHeader extends StatelessWidget {
+  final String name;
+
+  const _ProfileHeader({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.paddingMd),
-      decoration: BoxDecoration(
-        color: AppTheme.bgPrimary,
-        boxShadow: AppTheme.shadowSmall,
-      ),
-      child: Row(
-        children: [
-          // 返回按钮
-          GestureDetector(
-            onTap: () => context.go('/'),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppTheme.bgSecondary,
-                borderRadius: BorderRadius.circular(AppTheme.radiusRound),
-              ),
-              child: const Icon(Icons.arrow_back, size: 18),
-            ),
-          ),
-          const SizedBox(width: AppTheme.paddingMd),
-
-          // 标题
-          const Text(
-            '个人中心',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeLg,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建用户信息卡片
-  Widget _buildUserInfoCard(AuthProvider authProvider) {
-    final user = authProvider.user;
-
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.paddingXxl),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.primary, AppTheme.primaryDark],
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [Color(0xFFF472B6), Color(0xFFFB7185)],
         ),
-        borderRadius: BorderRadius.circular(AppTheme.radiusLg),
-        boxShadow: AppTheme.shadowMedium,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+        ),
       ),
+      padding: const EdgeInsets.fromLTRB(24, 72, 24, 40),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 头像
           Container(
-            width: 80,
-            height: 80,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               color: Colors.white,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  spreadRadius: 2,
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.person,
-              size: 40,
-              color: AppTheme.primary,
-            ),
+            child: const Icon(LucideIcons.userRound, size: 36, color: Color(0xFFFF385C)),
           ),
-          const SizedBox(height: AppTheme.paddingLg),
-
-          // 用户名
+          const SizedBox(height: 20),
           Text(
-            user?.nickname ?? '用户',
+            name,
             style: const TextStyle(
-              fontSize: AppTheme.fontSizeXl,
-              fontWeight: FontWeight.bold,
               color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: AppTheme.paddingSm),
-
-          // 手机号
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppTheme.paddingMd,
-              vertical: AppTheme.paddingSm,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(AppTheme.radiusRound),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.phone,
-                  size: 16,
-                  color: Colors.white,
-                ),
-                const SizedBox(width: AppTheme.paddingSm),
-                Text(
-                  user?.phone ?? '-',
-                  style: const TextStyle(
-                    fontSize: AppTheme.fontSizeBase,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
+          const SizedBox(height: 6),
+          const Text(
+            '欢迎使用理发预约服务',
+            style: TextStyle(
+              color: Color(0xE6FFFFFF),
+              fontSize: 16,
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  /// 构建功能卡片
-  Widget _buildFunctionCard(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.bgPrimary,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        boxShadow: AppTheme.shadowSmall,
-      ),
-      child: Column(
-        children: [
-          _buildFunctionItem(
-            icon: Icons.event_note,
-            title: '我的预约',
-            subtitle: '查看预约记录',
-            onTap: () => context.go('/appointments'),
-          ),
-          _buildDivider(),
-          _buildFunctionItem(
-            icon: Icons.store,
-            title: '店铺列表',
-            subtitle: '浏览所有店铺',
-            onTap: () => context.go('/'),
-          ),
-        ],
-      ),
-    );
-  }
+class _AppointmentCard extends StatelessWidget {
+  final VoidCallback onTap;
 
-  /// 构建功能项
-  Widget _buildFunctionItem({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
+  const _AppointmentCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(AppTheme.paddingLg),
-        child: Row(
-          children: [
-            // 图标
-            Container(
-              padding: const EdgeInsets.all(AppTheme.paddingMd),
-              decoration: BoxDecoration(
-                color: AppTheme.primaryLight,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-              ),
-              child: Icon(
-                icon,
-                color: AppTheme.primary,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: AppTheme.paddingLg),
-
-            // 文本
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: AppTheme.fontSizeMd,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.paddingXs),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: AppTheme.fontSizeSm,
-                      color: AppTheme.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // 箭头
-            const Icon(
-              Icons.chevron_right,
-              color: AppTheme.textTertiary,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x1A000000),
+              offset: Offset(0, 6),
+              blurRadius: 20,
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  /// 构建关于应用卡片
-  Widget _buildAboutCard() {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.paddingLg),
-      decoration: BoxDecoration(
-        color: AppTheme.bgPrimary,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-        boxShadow: AppTheme.shadowSmall,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: AppTheme.info.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                width: 56,
+                height: 56,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFFEDD5), Color(0xFFFFF1F5)],
+                  ),
+                  borderRadius: BorderRadius.all(Radius.circular(18)),
                 ),
-                child: const Icon(
-                  Icons.info_outline,
-                  color: AppTheme.info,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: AppTheme.paddingSm),
-              const Text(
-                '关于应用',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSizeMd,
-                  fontWeight: FontWeight.bold,
+                child: const Center(
+                  child: Icon(LucideIcons.calendar, size: 26, color: Color(0xFFFF385C)),
                 ),
               ),
+              const SizedBox(width: 18),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '我的预约',
+                      style: TextStyle(
+                        fontSize: 18,
+                        color: Color(0xFF111827),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      '查看预约记录',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(LucideIcons.chevronRight, color: Color(0xFF9CA3AF)),
             ],
           ),
-          const SizedBox(height: AppTheme.paddingMd),
-
-          _buildInfoRow('应用名称', '理发店预约系统'),
-          _buildInfoRow('版本号', 'v1.0.0'),
-          _buildInfoRow('开发团队', 'Flutter Team'),
-
-          const SizedBox(height: AppTheme.paddingMd),
-          const Text(
-            '感谢您使用我们的应用！如有任何问题或建议，欢迎联系我们。',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeSm,
-              color: AppTheme.textSecondary,
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建信息行
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppTheme.paddingSm),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: AppTheme.fontSizeBase,
-              color: AppTheme.textTertiary,
-            ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: AppTheme.fontSizeBase,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建退出登录按钮
-  Widget _buildLogoutButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton(
-        onPressed: () => _handleLogout(context),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: AppTheme.error, width: 2),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppTheme.radiusRound),
-          ),
-        ),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.logout, color: AppTheme.error),
-            SizedBox(width: AppTheme.paddingSm),
-            Text(
-              '退出登录',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeLg,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.error,
-              ),
-            ),
-          ],
         ),
       ),
     );
   }
+}
 
-  /// 构建分隔线
-  Widget _buildDivider() {
-    return const Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppTheme.paddingLg),
-      child: Divider(height: 1),
+class _LogoutCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _LogoutCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x14000000),
+            offset: Offset(0, 6),
+            blurRadius: 18,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: onTap,
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(LucideIcons.logOut, color: Color(0xFFFF385C), size: 20),
+                SizedBox(width: 8),
+                Text(
+                  '退出登录',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFFFF385C),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VersionInfo extends StatelessWidget {
+  const _VersionInfo();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      children: [
+        Text(
+          '理发预约 v1.0.0',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFFA0AEC0),
+          ),
+        ),
+      ],
     );
   }
 }
