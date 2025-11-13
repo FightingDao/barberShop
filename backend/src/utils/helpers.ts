@@ -35,15 +35,11 @@ export const formatTime = (time: Date | string, format: string = 'HH:mm'): strin
 
 // 解析日期 - 明确指定格式避免时区问题
 export const parseDate = (dateString: string): Date => {
-  // 使用 UTC 模式解析日期字符串，避免时区偏移
-  // 如果输入是 YYYY-MM-DD 格式，设置为当天的 00:00:00 UTC
-  const parsed = dayjs(dateString, 'YYYY-MM-DD', true)
-  if (!parsed.isValid()) {
-    // 如果严格模式解析失败，尝试宽松模式
-    return dayjs(dateString).toDate()
-  }
-  // 返回当天的开始时间（UTC）
-  return parsed.toDate()
+  // 直接使用字符串构造 Date，并设置为中午12:00，避免时区偏移问题
+  // 例如：'2025-11-16' -> new Date('2025-11-16T12:00:00')
+  const [year, month, day] = dateString.split('-').map(Number)
+  // 使用本地时间创建日期对象，设置为中午避免夏令时等边界问题
+  return new Date(year, month - 1, day, 12, 0, 0, 0)
 }
 
 // 解析时间
