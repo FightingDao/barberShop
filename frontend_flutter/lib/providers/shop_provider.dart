@@ -104,6 +104,14 @@ class ShopProvider with ChangeNotifier {
     }
   }
 
+  /// 直接获取店铺理发师列表（不修改状态）
+  ///
+  /// [shopId] 店铺ID
+  /// 返回理发师列表
+  Future<List<Stylist>> getShopStylists(int shopId) async {
+    return await _shopService.getShopStylists(shopId);
+  }
+
   /// 设置选中的店铺
   void setSelectedShop(Shop shop) {
     _selectedShop = shop;

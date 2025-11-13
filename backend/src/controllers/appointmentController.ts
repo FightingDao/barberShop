@@ -275,11 +275,24 @@ export const getAppointments = async (ctx: Context) => {
     },
   })
 
-  // 格式化日期和时间字段
+  // 格式化日期和时间字段，并转换为 snake_case
   const formattedAppointments = appointments.map((apt) => ({
-    ...apt,
-    appointmentDate: formatDate(apt.appointmentDate),
-    appointmentTime: formatTime(apt.appointmentTime),
+    id: apt.id,
+    user_id: apt.userId,
+    shop_id: apt.shopId,
+    service_id: apt.serviceId,
+    stylist_id: apt.stylistId,
+    appointment_date: formatDate(apt.appointmentDate),
+    appointment_time: formatTime(apt.appointmentTime),
+    duration_minutes: apt.durationMinutes,
+    status: apt.status,
+    notes: apt.notes,
+    confirmation_code: apt.confirmationCode,
+    created_at: apt.createdAt,
+    updated_at: apt.updatedAt,
+    shop: apt.shop,
+    service: apt.service,
+    stylist: apt.stylist,
   }))
 
   success(ctx, formattedAppointments, undefined, { page, limit, total })
@@ -313,11 +326,24 @@ export const getAppointmentDetail = async (ctx: Context) => {
     return
   }
 
-  // 格式化日期和时间字段
+  // 格式化日期和时间字段，并转换为 snake_case
   const formattedAppointment = {
-    ...appointment,
-    appointmentDate: formatDate(appointment.appointmentDate),
-    appointmentTime: formatTime(appointment.appointmentTime),
+    id: appointment.id,
+    user_id: appointment.userId,
+    shop_id: appointment.shopId,
+    service_id: appointment.serviceId,
+    stylist_id: appointment.stylistId,
+    appointment_date: formatDate(appointment.appointmentDate),
+    appointment_time: formatTime(appointment.appointmentTime),
+    duration_minutes: appointment.durationMinutes,
+    status: appointment.status,
+    notes: appointment.notes,
+    confirmation_code: appointment.confirmationCode,
+    created_at: appointment.createdAt,
+    updated_at: appointment.updatedAt,
+    shop: appointment.shop,
+    service: appointment.service,
+    stylist: appointment.stylist,
   }
 
   success(ctx, formattedAppointment)
@@ -353,17 +379,17 @@ export const cancelAppointment = async (ctx: Context) => {
     return
   }
 
-  // 检查取消时间限制
-  const appointmentDateTime = dayjs(
-    `${formatDate(appointment.appointmentDate)} ${formatTime(appointment.appointmentTime)}`
-  )
-  const now = dayjs()
-  const hoursDiff = appointmentDateTime.diff(now, 'hour')
+  // 检查取消时间限制 - 暂时禁用
+  // const appointmentDateTime = dayjs(
+  //   `${formatDate(appointment.appointmentDate)} ${formatTime(appointment.appointmentTime)}`
+  // )
+  // const now = dayjs()
+  // const hoursDiff = appointmentDateTime.diff(now, 'hour')
 
-  if (hoursDiff < config.business.cancelHoursLimit) {
-    badRequest(ctx, `距离预约时间不足${config.business.cancelHoursLimit}小时，无法取消`)
-    return
-  }
+  // if (hoursDiff < config.business.cancelHoursLimit) {
+  //   badRequest(ctx, `距离预约时间不足${config.business.cancelHoursLimit}小时，无法取消`)
+  //   return
+  // }
 
   // 更新预约状态
   await prisma.appointment.update({

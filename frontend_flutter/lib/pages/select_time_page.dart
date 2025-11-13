@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
-import '../config/app_theme.dart';
-import '../models/models.dart';
-import '../providers/providers.dart';
-import '../widgets/widgets.dart';
+import '../providers/booking_provider.dart';
+import '../providers/shop_provider.dart';
+import '../services/booking_service.dart';
+import '../models/time_slot.dart';
 
-/// 选择时间页
-/// 选择预约日期和时间段
+/// 选择时间页面 - 严格按照设计稿还原
 class SelectTimePage extends StatefulWidget {
   final int shopId;
 
@@ -22,13 +21,23 @@ class SelectTimePage extends StatefulWidget {
 class _SelectTimePageState extends State<SelectTimePage> {
   List<DateItem> _dateList = [];
   String? _selectedDate;
-  TimeSlot? _selectedTimeSlot;
+  String? _selectedTime;
   bool _isInitialized = false;
+
+  // 可用时间段数据
+  List<TimeSlot> _availableSlots = [];
+  bool _isLoadingSlots = false;
+  String? _slotsErrorMessage;
 
   @override
   void initState() {
     super.initState();
     _initializeDateList();
+    // 默认选择明天和14:00
+    if (_dateList.length > 1) {
+      _selectedDate = _dateList[1].id;
+      _selectedTime = '14:00';
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeData();
     });
@@ -50,407 +59,305 @@ class _SelectTimePageState extends State<SelectTimePage> {
         label = '${date.day}';
       }
 
+      final month = date.month;
+      final day = date.day;
+      final weekday = weekdays[date.weekday % 7];
+
+      // 生成 YYYY-MM-DD 格式的日期字符串
+      final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
       _dateList.add(DateItem(
-        date: DateFormat('yyyy-MM-dd').format(date),
+        id: dateStr,
         label: label,
-        weekday: weekdays[date.weekday % 7],
-        displayDate: '${date.month}月${date.day}日',
+        weekday: weekday,
+        fullDate: '$month月$day日',
       ));
     }
-
-    // 默认选择今天
-    _selectedDate = _dateList[0].date;
   }
 
   /// 初始化数据
   void _initializeData() {
     if (!_isInitialized) {
+      final shopProvider = context.read<ShopProvider>();
       final bookingProvider = context.read<BookingProvider>();
-      if (_selectedDate != null) {
-        bookingProvider.setDate(_selectedDate!);
-        bookingProvider.fetchAvailableTimeSlots();
+
+      // 设置当前店铺（如果还未设置）
+      if (shopProvider.selectedShop != null &&
+          shopProvider.selectedShop!.id == widget.shopId) {
+        bookingProvider.setShop(shopProvider.selectedShop!);
       }
+
       _isInitialized = true;
+
+      // 加载默认日期的可用时间段
+      if (_selectedDate != null) {
+        _loadAvailability(_selectedDate!);
+      }
     }
+  }
+
+  /// 加载指定日期的可用时间段
+  Future<void> _loadAvailability(String date) async {
+    final bookingProvider = context.read<BookingProvider>();
+
+    // 检查必要的数据是否存在
+    if (bookingProvider.selectedShop == null ||
+        bookingProvider.selectedService == null) {
+      setState(() {
+        _slotsErrorMessage = '缺少必要的预约信息';
+        _isLoadingSlots = false;
+        _availableSlots = [];
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoadingSlots = true;
+      _slotsErrorMessage = null;
+    });
+
+    try {
+      final slots = await BookingService.instance.getAvailableTimeSlots(
+        shopId: bookingProvider.selectedShop!.id,
+        serviceId: bookingProvider.selectedService!.id,
+        date: date,
+        stylistId: bookingProvider.selectedStylist?.id,
+      );
+
+      setState(() {
+        _availableSlots = slots;
+        _isLoadingSlots = false;
+      });
+    } catch (e) {
+      setState(() {
+        _slotsErrorMessage = '加载时间段失败: ${e.toString()}';
+        _isLoadingSlots = false;
+        _availableSlots = [];
+      });
+    }
+  }
+
+  /// 生成上午时间段 09:00 - 11:30
+  List<TimeSlot> _generateMorningSlots() {
+    return _availableSlots.where((slot) {
+      final hour = int.tryParse(slot.startTime.split(':')[0]) ?? 0;
+      return hour >= 9 && hour < 12;
+    }).toList();
+  }
+
+  /// 生成下午时间段 12:00 - 20:30
+  List<TimeSlot> _generateAfternoonSlots() {
+    return _availableSlots.where((slot) {
+      final hour = int.tryParse(slot.startTime.split(':')[0]) ?? 0;
+      return hour >= 12 && hour <= 20;
+    }).toList();
+  }
+
+  /// 检查时间段是否可用
+  bool _isSlotAvailable(String time) {
+    final slot = _availableSlots.firstWhere(
+      (slot) => slot.startTime == time,
+      orElse: () => TimeSlot(
+        date: '',
+        startTime: '',
+        endTime: '',
+        isAvailable: false,
+      ),
+    );
+    return slot.isAvailable;
   }
 
   /// 处理日期选择
-  void _handleDateSelect(String date) {
+  void _handleDateSelect(String dateId) {
     setState(() {
-      _selectedDate = date;
-      _selectedTimeSlot = null; // 切换日期时清空时间选择
+      _selectedDate = dateId;
+      _selectedTime = null; // 清除之前选择的时间
     });
-
-    final bookingProvider = context.read<BookingProvider>();
-    bookingProvider.setDate(date);
-    bookingProvider.fetchAvailableTimeSlots();
+    // 加载新日期的可用时间段
+    _loadAvailability(dateId);
   }
 
-  /// 处理时间段选择
-  void _handleTimeSlotSelect(TimeSlot timeSlot) {
-    if (!timeSlot.isAvailable) return;
+  /// 处理时间选择
+  void _handleTimeSelect(String time) {
+    if (!_isSlotAvailable(time)) return;
 
     setState(() {
-      _selectedTimeSlot = timeSlot;
+      _selectedTime = time;
     });
-  }
-
-  /// 生成所有时间段
-  List<TimeSlotItem> _generateAllTimeSlots(List<TimeSlot> availableSlots) {
-    final slots = <TimeSlotItem>[];
-    const startHour = 9;
-    const endHour = 21;
-
-    for (int hour = startHour; hour <= endHour; hour++) {
-      for (int minute = 0; minute < 60; minute += 30) {
-        if (hour == endHour && minute > 0) break;
-
-        final time = '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
-        final matchingSlot = availableSlots.firstWhere(
-          (slot) => slot.startTime.substring(0, 5) == time,
-          orElse: () => TimeSlot(
-            date: _selectedDate ?? '',
-            startTime: '$time:00',
-            endTime: '',
-            isAvailable: false,
-          ),
-        );
-
-        slots.add(TimeSlotItem(
-          time: time,
-          slot: matchingSlot,
-        ));
-      }
-    }
-
-    return slots;
-  }
-
-  /// 按上午/下午分组
-  Map<String, List<TimeSlotItem>> _groupTimeSlots(List<TimeSlotItem> allSlots) {
-    final morning = <TimeSlotItem>[];
-    final afternoon = <TimeSlotItem>[];
-
-    for (final item in allSlots) {
-      final hour = int.parse(item.time.split(':')[0]);
-      if (hour < 12) {
-        morning.add(item);
-      } else {
-        afternoon.add(item);
-      }
-    }
-
-    return {'morning': morning, 'afternoon': afternoon};
   }
 
   /// 下一步
   void _handleNext() {
-    if (_selectedTimeSlot == null) {
+    if (_selectedDate == null || _selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请选择时间段')),
+        const SnackBar(content: Text('请选择日期和时间')),
       );
       return;
     }
 
-    context.read<BookingProvider>().setTime(_selectedTimeSlot!.startTime);
+    // 设置选中的日期和时间到 BookingProvider
+    final bookingProvider = context.read<BookingProvider>();
+    bookingProvider.setDateTime(_selectedDate!, _selectedTime!);
+
     context.push('/booking/confirm/${widget.shopId}');
   }
 
   @override
   Widget build(BuildContext context) {
+    final selectedDateObj = _dateList.firstWhere(
+      (d) => d.id == _selectedDate,
+      orElse: () => _dateList[0],
+    );
+
     return Scaffold(
-      backgroundColor: AppTheme.bgPrimary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 自定义顶部导航
-            _buildAppBar(),
-
-            // 内容区域
-            Expanded(
-              child: Consumer<BookingProvider>(
-                builder: (context, bookingProvider, _) {
-                  return _buildContent(bookingProvider);
-                },
-              ),
-            ),
-
-            // 底部操作栏
-            _buildBottomBar(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 构建顶部导航栏
-  Widget _buildAppBar() {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.paddingMd),
-      decoration: BoxDecoration(
-        color: AppTheme.bgPrimary,
-        boxShadow: AppTheme.shadowSmall,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.white,
+      body: Stack(
         children: [
-          Row(
-            children: [
-              // 返回按钮
-              GestureDetector(
-                onTap: () => context.pop(),
-                child: Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: AppTheme.bgSecondary,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusRound),
+          // 主内容区域
+          CustomScrollView(
+            slivers: [
+              // 顶部间距（为固定header留空间）
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 56),
+              ),
+              // 提示文字
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  child: Text(
+                    '请选择您方便的预约时间',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF9CA3AF),
+                    ),
                   ),
-                  child: const Icon(Icons.arrow_back, size: 18),
                 ),
               ),
-              const SizedBox(width: AppTheme.paddingMd),
-
-              // 标题
-              const Text(
-                '选择时间',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSizeLg,
-                  fontWeight: FontWeight.bold,
+              // 日期选择器
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: _buildDateSelector(),
                 ),
               ),
+              // 加载指示器或错误信息
+              if (_isLoadingSlots)
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 40),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF385C),
+                      ),
+                    ),
+                  ),
+                )
+              else if (_slotsErrorMessage != null)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEE2E2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            color: Color(0xFFDC2626),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _slotsErrorMessage!,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFFDC2626),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                // 上午时间段
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    child: _buildTimeSection('上午', _generateMorningSlots()),
+                  ),
+                ),
+                // 下午时间段
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
+                    child: _buildTimeSection('下午', _generateAfternoonSlots()),
+                  ),
+                ),
+              ],
             ],
           ),
-          const SizedBox(height: AppTheme.paddingXs),
-          Padding(
-            padding: EdgeInsets.only(left: 32 + AppTheme.paddingMd),
-            child: const Text(
-              '请选择您方便的预约时间',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeSm,
-                color: AppTheme.textTertiary,
-              ),
-            ),
-          ),
+          // 固定顶部导航栏
+          _buildHeader(),
+          // 固定底部操作栏
+          _buildBottomBar(selectedDateObj),
         ],
       ),
     );
   }
 
-  /// 构建内容区域
-  Widget _buildContent(BookingProvider bookingProvider) {
-    return ListView(
-      padding: const EdgeInsets.all(AppTheme.paddingLg),
-      children: [
-        // 日期选择
-        _buildDateSelector(),
-        const SizedBox(height: AppTheme.paddingLg),
-
-        // 时间段选择
-        if (_selectedDate != null) _buildTimeSlotSelector(bookingProvider),
-      ],
-    );
-  }
-
-  /// 构建日期选择器
-  Widget _buildDateSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Row(
-          children: [
-            Text('📅', style: TextStyle(fontSize: 16)),
-            SizedBox(width: AppTheme.paddingXs),
-            Text(
-              '选择日期',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeMd,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: AppTheme.paddingMd),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: _dateList.map((item) {
-              final isSelected = _selectedDate == item.date;
-              return GestureDetector(
-                onTap: () => _handleDateSelect(item.date),
-                child: Container(
-                  width: 70,
-                  margin: const EdgeInsets.only(right: AppTheme.paddingMd),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.paddingSm,
-                    vertical: AppTheme.paddingMd,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary : AppTheme.bgTertiary,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        item.label,
-                        style: TextStyle(
-                          fontSize: AppTheme.fontSizeLg,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Colors.white : AppTheme.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.paddingXs),
-                      Text(
-                        item.weekday,
-                        style: TextStyle(
-                          fontSize: AppTheme.fontSizeXs,
-                          color: isSelected ? Colors.white.withOpacity(0.8) : AppTheme.textTertiary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 构建时间段选择器
-  Widget _buildTimeSlotSelector(BookingProvider bookingProvider) {
-    // 加载中
-    if (bookingProvider.isLoading) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(AppTheme.paddingXxl),
-          child: Column(
-            children: [
-              CircularProgressIndicator(color: AppTheme.primary),
-              SizedBox(height: AppTheme.paddingLg),
-              Text(
-                '正在加载可用时间...',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSizeSm,
-                  color: AppTheme.textTertiary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    // 错误状态
-    if (bookingProvider.errorMessage != null) {
-      return Padding(
-        padding: const EdgeInsets.all(AppTheme.paddingXxl),
-        child: AppErrorWidget(
-          message: bookingProvider.errorMessage!,
-          onRetry: () => bookingProvider.fetchAvailableTimeSlots(),
-        ),
-      );
-    }
-
-    final allSlots = _generateAllTimeSlots(bookingProvider.availableTimeSlots);
-    final groupedSlots = _groupTimeSlots(allSlots);
-    final morningSlots = groupedSlots['morning']!;
-    final afternoonSlots = groupedSlots['afternoon']!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 上午时间段
-        if (morningSlots.isNotEmpty) ...[
-          const Text(
-            '上午',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeSm,
-              color: AppTheme.textTertiary,
-            ),
-          ),
-          const SizedBox(height: AppTheme.paddingMd),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 2.2,
-              crossAxisSpacing: AppTheme.paddingMd,
-              mainAxisSpacing: AppTheme.paddingMd,
-            ),
-            itemCount: morningSlots.length,
-            itemBuilder: (context, index) {
-              return _buildTimeSlotButton(morningSlots[index]);
-            },
-          ),
-          const SizedBox(height: AppTheme.paddingXxl),
-        ],
-
-        // 下午时间段
-        if (afternoonSlots.isNotEmpty) ...[
-          const Text(
-            '下午',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeSm,
-              color: AppTheme.textTertiary,
-            ),
-          ),
-          const SizedBox(height: AppTheme.paddingMd),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              childAspectRatio: 2.2,
-              crossAxisSpacing: AppTheme.paddingMd,
-              mainAxisSpacing: AppTheme.paddingMd,
-            ),
-            itemCount: afternoonSlots.length,
-            itemBuilder: (context, index) {
-              return _buildTimeSlotButton(afternoonSlots[index]);
-            },
-          ),
-        ],
-      ],
-    );
-  }
-
-  /// 构建时间段按钮
-  Widget _buildTimeSlotButton(TimeSlotItem item) {
-    final isSelected = _selectedTimeSlot?.startTime.substring(0, 5) == item.time;
-    final isAvailable = item.slot.isAvailable;
-
-    return GestureDetector(
-      onTap: isAvailable ? () => _handleTimeSlotSelect(item.slot) : null,
+  Widget _buildHeader() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
       child: Container(
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primary
-              : isAvailable
-                  ? AppTheme.bgPrimary
-                  : AppTheme.bgTertiary,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          border: Border.all(
-            color: isSelected
-                ? AppTheme.primary
-                : isAvailable
-                    ? AppTheme.borderLight
-                    : AppTheme.bgTertiary,
+          color: Colors.white.withOpacity(0.95),
+          border: const Border(
+            bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
           ),
         ),
-        child: Center(
-          child: Text(
-            item.time,
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeMd,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected
-                  ? Colors.white
-                  : isAvailable
-                      ? AppTheme.textSecondary
-                      : AppTheme.textDisabled,
+        child: SafeArea(
+          bottom: false,
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.transparent,
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        LucideIcons.arrowLeft,
+                        size: 20,
+                        color: Color(0xFF374151),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  '选择时间',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF111827),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -458,59 +365,241 @@ class _SelectTimePageState extends State<SelectTimePage> {
     );
   }
 
-  /// 构建底部操作栏
-  Widget _buildBottomBar() {
-    String displayText = '';
-    if (_selectedDate != null && _selectedTimeSlot != null) {
-      final dateItem = _dateList.firstWhere((d) => d.date == _selectedDate);
-      displayText = '已选: ${dateItem.displayDate} ${_selectedTimeSlot!.startTime.substring(0, 5)}';
-    }
+  Widget _buildDateSelector() {
+    return SizedBox(
+      height: 80,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _dateList.length,
+        itemBuilder: (context, index) {
+          final date = _dateList[index];
+          final isSelected = _selectedDate == date.id;
 
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.paddingLg),
-      decoration: BoxDecoration(
-        color: AppTheme.bgPrimary,
-        border: const Border(top: BorderSide(color: AppTheme.borderLight)),
-        boxShadow: AppTheme.shadowLarge,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (displayText.isNotEmpty) ...[
-            Text(
-              displayText,
-              style: const TextStyle(
-                fontSize: AppTheme.fontSizeSm,
-                color: AppTheme.textSecondary,
+          return GestureDetector(
+            onTap: () => _handleDateSelect(date.id),
+            child: Container(
+              width: 64,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFFFF385C) : const Color(0xFFF3F4F6),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: isSelected
+                    ? const [
+                        BoxShadow(
+                          color: Color(0x33FF385C),
+                          offset: Offset(0, 4),
+                          blurRadius: 12,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    date.label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isSelected ? Colors.white : const Color(0xFF111827),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    date.weekday,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected
+                          ? Colors.white.withOpacity(0.9)
+                          : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: AppTheme.paddingMd),
-          ],
+          );
+        },
+      ),
+    );
+  }
 
-          // 下一步按钮
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _selectedTimeSlot != null ? _handleNext : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                disabledBackgroundColor: AppTheme.primary.withOpacity(0.6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusRound),
-                ),
-              ),
-              child: const Text(
-                '下一步',
+  Widget _buildTimeSection(String title, List<TimeSlot> timeSlots) {
+    if (timeSlots.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Color(0xFF111827),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9FAFB),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text(
+                '暂无可用时间段',
                 style: TextStyle(
-                  fontSize: AppTheme.fontSizeLg,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  fontSize: 14,
+                  color: Color(0xFF9CA3AF),
                 ),
               ),
             ),
           ),
         ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            color: Color(0xFF111827),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 12),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 3,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 2.5,
+          ),
+          itemCount: timeSlots.length,
+          itemBuilder: (context, index) {
+            final slot = timeSlots[index];
+            final time = slot.startTime;
+            final isAvailable = slot.isAvailable;
+            final isSelected = _selectedTime == time;
+
+            return GestureDetector(
+              onTap: () => _handleTimeSelect(time),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? const Color(0xFFFF385C)
+                      : isAvailable
+                          ? const Color(0xFFF3F4F6)
+                          : const Color(0xFFF9FAFB),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: isSelected
+                      ? const [
+                          BoxShadow(
+                            color: Color(0x33FF385C),
+                            offset: Offset(0, 2),
+                            blurRadius: 8,
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Center(
+                  child: Text(
+                    time,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isSelected
+                          ? Colors.white
+                          : isAvailable
+                              ? const Color(0xFF111827)
+                              : const Color(0xFFD1D5DB),
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomBar(DateItem selectedDateObj) {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x1A000000),
+              offset: Offset(0, -2),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_selectedTime != null) ...[
+                Text(
+                  '已选：${selectedDateObj.fullDate} $_selectedTime',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
+              GestureDetector(
+                onTap: _handleNext,
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: _selectedTime != null
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFF385C), Color(0xFFE31C5F)],
+                          )
+                        : null,
+                    color: _selectedTime != null ? null : const Color(0xFFD1D5DB),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: _selectedTime != null
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x33FF385C),
+                              offset: Offset(0, 4),
+                              blurRadius: 12,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '下一步',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -518,26 +607,15 @@ class _SelectTimePageState extends State<SelectTimePage> {
 
 /// 日期项
 class DateItem {
-  final String date; // yyyy-MM-dd
+  final String id; // M-d
   final String label; // 今天/明天/日期
   final String weekday; // 周几
-  final String displayDate; // 显示用日期
+  final String fullDate; // M月d日
 
   DateItem({
-    required this.date,
+    required this.id,
     required this.label,
     required this.weekday,
-    required this.displayDate,
-  });
-}
-
-/// 时间段项
-class TimeSlotItem {
-  final String time; // HH:mm
-  final TimeSlot slot;
-
-  TimeSlotItem({
-    required this.time,
-    required this.slot,
+    required this.fullDate,
   });
 }

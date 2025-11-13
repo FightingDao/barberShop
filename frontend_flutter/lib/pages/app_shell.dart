@@ -36,19 +36,22 @@ class AppShell extends StatelessWidget {
         child: SafeArea(
           top: false,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _BottomNavItem(
-                icon: LucideIcons.house,
-                label: '首页',
-                isActive: activeIndex == 0,
-                onTap: () => _onTap(0),
+              Expanded(
+                child: _BottomNavItem(
+                  icon: LucideIcons.house,
+                  label: '首页',
+                  isActive: activeIndex == 0,
+                  onTap: () => _onTap(0),
+                ),
               ),
-              _BottomNavItem(
-                icon: LucideIcons.userRound,
-                label: '我的',
-                isActive: activeIndex == 1,
-                onTap: () => _onTap(1),
+              Expanded(
+                child: _BottomNavItem(
+                  icon: LucideIcons.userRound,
+                  label: '我的',
+                  isActive: activeIndex == 1,
+                  onTap: () => _onTap(1),
+                ),
               ),
             ],
           ),
@@ -76,26 +79,30 @@ class _BottomNavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.translucent,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 24,
-            color: isActive ? const Color(0xFFFF385C) : const Color(0xFF9CA3AF),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isActive
-                  ? const Color(0xFFFF385C)
-                  : const Color(0xFF9CA3AF),
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+      child: Container(
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: isActive ? const Color(0xFFFF385C) : const Color(0xFF9CA3AF),
             ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isActive
+                    ? const Color(0xFFFF385C)
+                    : const Color(0xFF9CA3AF),
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -217,7 +217,7 @@ class _HomePageState extends State<HomePage> {
                             final shop = shopProvider.shops[index];
                             return _DesignShopCard(
                               shop: shop,
-                              onTap: () => context.go('/shop/${shop.id}'),
+                              onTap: () => context.push('/shop/${shop.id}'),
                             );
                           }, childCount: shopProvider.shops.length),
                         ),

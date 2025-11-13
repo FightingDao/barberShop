@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
-import '../config/app_theme.dart';
+import '../providers/shop_provider.dart';
+import '../providers/booking_provider.dart';
 import '../models/models.dart';
-import '../providers/providers.dart';
-import '../widgets/widgets.dart';
 
-/// 选择理发师页
-/// 显示店铺的所有理发师供用户选择，或选择不指定
+/// 选择理发师页面 - 严格按照设计稿还原
 class SelectStylistPage extends StatefulWidget {
   final int shopId;
 
@@ -19,8 +18,11 @@ class SelectStylistPage extends StatefulWidget {
 }
 
 class _SelectStylistPageState extends State<SelectStylistPage> {
-  Object? _selectedStylist; // Can be Stylist or 'none'
+  int? _selectedStylistId; // null 表示"不指定理发师"，-1 表示未选择
   bool _isInitialized = false;
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<Stylist> _stylists = [];
 
   @override
   void initState() {
@@ -30,490 +32,214 @@ class _SelectStylistPageState extends State<SelectStylistPage> {
     });
   }
 
-  /// 初始化数据
-  void _initializeData() {
+  Future<void> _initializeData() async {
     if (!_isInitialized) {
       final shopProvider = context.read<ShopProvider>();
-      shopProvider.fetchStylists(widget.shopId);
+      final bookingProvider = context.read<BookingProvider>();
+
+      // 设置当前店铺（如果还未设置）
+      if (shopProvider.selectedShop != null &&
+          shopProvider.selectedShop!.id == widget.shopId) {
+        bookingProvider.setShop(shopProvider.selectedShop!);
+      }
+
+      // 从API获取理发师列表
+      await _loadStylists();
+
       _isInitialized = true;
     }
   }
 
-  /// 处理理发师选择
-  void _handleSelectStylist(Object? selection) {
+  Future<void> _loadStylists() async {
     setState(() {
-      if (_selectedStylist == selection) {
-        _selectedStylist = null;
-      } else {
-        _selectedStylist = selection;
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final stylists = await context.read<ShopProvider>().getShopStylists(widget.shopId);
+      if (mounted) {
+        setState(() {
+          _stylists = stylists;
+          _isLoading = false;
+        });
       }
+    } catch (e) {
+      debugPrint('Load stylists error: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = '加载理发师列表失败';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _handleSelectStylist(int? stylistId, StylistStatus? status) {
+    // 如果是已约满状态，不允许选择
+    if (status == StylistStatus.busy) return;
+
+    setState(() {
+      _selectedStylistId = stylistId;
     });
   }
 
-  /// 显示理发师详情
   void _showStylistDetail(Stylist stylist) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _StylistDetailSheet(stylist: stylist),
-    );
-  }
-
-  /// 获取理发师状态信息
-  Map<String, dynamic> _getStylistStatus(Stylist stylist) {
-    switch (stylist.status) {
-      case StylistStatus.active:
-        return {
-          'text': '可约',
-          'color': AppTheme.success,
-          'canSelect': true,
-        };
-      case StylistStatus.busy:
-        return {
-          'text': '已约满',
-          'color': AppTheme.primary,
-          'canSelect': false,
-        };
-      case StylistStatus.inactive:
-        return {
-          'text': '休息中',
-          'color': AppTheme.textTertiary,
-          'canSelect': false,
-        };
-    }
-  }
-
-  /// 下一步
-  void _handleNext() {
-    if (_selectedStylist == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请选择理发师')),
-      );
-      return;
-    }
-
-    final bookingProvider = context.read<BookingProvider>();
-    if (_selectedStylist == 'none') {
-      bookingProvider.setStylist(null);
-    } else {
-      bookingProvider.setStylist(_selectedStylist as Stylist);
-    }
-
-    context.push('/booking/select-time/${widget.shopId}');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.bgSecondary,
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 自定义顶部导航
-            _buildAppBar(),
-
-            // 内容区域
-            Expanded(
-              child: Consumer2<ShopProvider, BookingProvider>(
-                builder: (context, shopProvider, bookingProvider, _) {
-                  // 加载中
-                  if (shopProvider.isLoading) {
-                    return const LoadingWidget(message: '加载理发师列表...');
-                  }
-
-                  // 错误状态
-                  if (shopProvider.errorMessage != null) {
-                    return AppErrorWidget(
-                      message: shopProvider.errorMessage!,
-                      onRetry: () => shopProvider.fetchStylists(widget.shopId),
-                    );
-                  }
-
-                  return _buildContent(shopProvider, bookingProvider);
-                },
-              ),
-            ),
-
-            // 底部操作栏
-            _buildBottomBar(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 构建顶部导航栏
-  Widget _buildAppBar() {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.paddingMd),
-      decoration: BoxDecoration(
-        color: AppTheme.bgPrimary,
-        boxShadow: AppTheme.shadowSmall,
-      ),
-      child: Row(
-        children: [
-          // 返回按钮
-          GestureDetector(
-            onTap: () => context.pop(),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: AppTheme.bgSecondary,
-                borderRadius: BorderRadius.circular(AppTheme.radiusRound),
-              ),
-              child: const Icon(Icons.arrow_back, size: 18),
-            ),
-          ),
-          const SizedBox(width: AppTheme.paddingMd),
-
-          // 标题
-          const Text(
-            '选择理发师',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeLg,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建内容区域
-  Widget _buildContent(ShopProvider shopProvider, BookingProvider bookingProvider) {
-    return ListView(
-      padding: const EdgeInsets.all(AppTheme.paddingLg),
-      children: [
-        // 预约信息提示
-        if (bookingProvider.selectedShop != null && bookingProvider.selectedService != null)
-          Container(
-            padding: const EdgeInsets.all(AppTheme.paddingLg),
-            margin: const EdgeInsets.only(bottom: AppTheme.paddingLg),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryLight,
-              borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  bookingProvider.selectedShop!.name,
-                  style: const TextStyle(
-                    fontSize: AppTheme.fontSizeLg,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
-                  ),
-                ),
-                const SizedBox(height: AppTheme.paddingSm),
-                Text(
-                  '服务：${bookingProvider.selectedService!.name} | ¥${bookingProvider.selectedService!.price.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    fontSize: AppTheme.fontSizeSm,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-        // 不指定理发师选项
-        _buildNoneOption(),
-        const SizedBox(height: AppTheme.paddingLg),
-
-        // 标题
-        const Text(
-          '或选择指定理发师',
-          style: TextStyle(
-            fontSize: AppTheme.fontSizeMd,
-            color: AppTheme.textSecondary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: AppTheme.paddingMd),
-
-        // 理发师列表
-        if (shopProvider.stylists.isEmpty)
-          const EmptyWidget(
-            message: '暂无理发师信息',
-            icon: Icons.person_outline,
-          )
-        else
-          ...shopProvider.stylists.map((stylist) {
-            final isSelected = _selectedStylist is Stylist && (_selectedStylist as Stylist).id == stylist.id;
-            final statusInfo = _getStylistStatus(stylist);
-            return _buildStylistCard(stylist, isSelected, statusInfo);
-          }).toList(),
-      ],
-    );
-  }
-
-  /// 构建"不指定理发师"选项
-  Widget _buildNoneOption() {
-    final isSelected = _selectedStylist == 'none';
-
-    return GestureDetector(
-      onTap: () => _handleSelectStylist('none'),
-      child: Container(
-        padding: const EdgeInsets.all(AppTheme.paddingLg),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryLight : AppTheme.bgPrimary,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          border: Border.all(
-            color: isSelected ? AppTheme.primary : AppTheme.border,
-            width: 2,
-            style: isSelected ? BorderStyle.solid : BorderStyle.solid,
-          ),
-          boxShadow: isSelected ? AppTheme.shadowPrimary : AppTheme.shadowSmall,
-        ),
-        child: Stack(
-          children: [
-            Row(
-              children: [
-                // 图标
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary : AppTheme.bgTertiary,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusRound),
-                  ),
-                  child: Icon(
-                    Icons.person_outline,
-                    size: 28,
-                    color: isSelected ? Colors.white : AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(width: AppTheme.paddingLg),
-
-                // 信息
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '不指定理发师',
-                        style: TextStyle(
-                          fontSize: AppTheme.fontSizeLg,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: AppTheme.paddingSm),
-                      Text(
-                        '由店铺安排合适的理发师为您服务',
-                        style: TextStyle(
-                          fontSize: AppTheme.fontSizeSm,
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            // 选中标记
-            if (isSelected)
-              Positioned(
-                top: -1,
-                right: -1,
-                child: CustomPaint(
-                  painter: _CornerTrianglePainter(),
-                  child: const SizedBox(
-                    width: 28,
-                    height: 28,
-                    child: Align(
-                      alignment: Alignment.topRight,
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 4, right: 4),
-                        child: Icon(
-                          Icons.check,
-                          size: 12,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// 构建理发师卡片
-  Widget _buildStylistCard(Stylist stylist, bool isSelected, Map<String, dynamic> statusInfo) {
-    final canSelect = statusInfo['canSelect'] as bool;
-
-    return GestureDetector(
-      onTap: canSelect ? () => _handleSelectStylist(stylist) : null,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppTheme.paddingLg),
-        padding: const EdgeInsets.all(AppTheme.paddingLg),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryLight : AppTheme.bgPrimary,
-          borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-          border: Border.all(
-            color: isSelected ? AppTheme.primary : AppTheme.borderLight,
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: isSelected ? AppTheme.shadowPrimary : AppTheme.shadowSmall,
-        ),
-        child: Opacity(
-          opacity: canSelect ? 1.0 : 0.6,
-          child: Stack(
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // 标题
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '理发师详情',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // 头像和基本信息
               Row(
                 children: [
-                  // 头像
-                  GestureDetector(
-                    onTap: canSelect ? () => _showStylistDetail(stylist) : null,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppTheme.primary : AppTheme.bgTertiary,
-                        borderRadius: BorderRadius.circular(AppTheme.radiusRound),
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFCE7F3), Color(0xFFE9D5FF)],
                       ),
-                      child: Icon(
-                        Icons.person,
-                        size: 28,
-                        color: isSelected ? Colors.white : AppTheme.textSecondary,
-                      ),
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: Center(
+                      child: stylist.avatarUrl != null
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(40),
+                              child: Image.network(
+                                stylist.avatarUrl!,
+                                width: 80,
+                                height: 80,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Text('👨', style: TextStyle(fontSize: 40)),
+                              ),
+                            )
+                          : const Text('👨', style: TextStyle(fontSize: 40)),
                     ),
                   ),
-                  const SizedBox(width: AppTheme.paddingLg),
-
-                  // 理发师信息
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Text(
-                              stylist.name,
-                              style: const TextStyle(
-                                fontSize: AppTheme.fontSizeLg,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (stylist.level != null) ...[
-                              const SizedBox(width: AppTheme.paddingSm),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppTheme.paddingSm,
-                                  vertical: AppTheme.paddingXs,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.primary,
-                                  borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                                ),
-                                child: Text(
-                                  stylist.level!,
-                                  style: const TextStyle(
-                                    fontSize: AppTheme.fontSizeXs,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
+                        Text(
+                          stylist.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF111827),
+                          ),
                         ),
-                        if (stylist.title != null) ...[
-                          const SizedBox(height: AppTheme.paddingXs),
+                        const SizedBox(height: 4),
+                        if (stylist.title != null)
                           Text(
                             stylist.title!,
                             style: const TextStyle(
-                              fontSize: AppTheme.fontSizeSm,
-                              color: AppTheme.textTertiary,
+                              fontSize: 14,
+                              color: Color(0xFF6B7280),
                             ),
                           ),
-                        ],
-                        const SizedBox(height: AppTheme.paddingSm),
-                        Row(
-                          children: [
-                            if (stylist.experience != null)
-                              Text(
-                                '🎓 ${stylist.experience}年经验',
-                                style: const TextStyle(
-                                  fontSize: AppTheme.fontSizeSm,
-                                  color: AppTheme.textSecondary,
-                                ),
-                              ),
-                            if (stylist.specialty != null) ...[
-                              const SizedBox(width: AppTheme.paddingMd),
-                              Expanded(
-                                child: Text(
-                                  '✨ ${stylist.specialty}',
-                                  style: const TextStyle(
-                                    fontSize: AppTheme.fontSizeSm,
-                                    color: AppTheme.textSecondary,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+                        const SizedBox(height: 8),
+                        _buildStatusBadge(stylist.status),
                       ],
                     ),
                   ),
                 ],
               ),
-
-              // 状态徽章
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppTheme.paddingSm,
-                    vertical: AppTheme.paddingXs,
-                  ),
+              const SizedBox(height: 24),
+              // 从业经验
+              if (stylist.experienceYears != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: statusInfo['color'] as Color,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusSm),
+                    color: const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Text(
-                    statusInfo['text'] as String,
-                    style: const TextStyle(
-                      fontSize: AppTheme.fontSizeXs,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-
-              // 选中标记
-              if (isSelected)
-                Positioned(
-                  top: -1,
-                  right: -1,
-                  child: CustomPaint(
-                    painter: _CornerTrianglePainter(),
-                    child: const SizedBox(
-                      width: 28,
-                      height: 28,
-                      child: Align(
-                        alignment: Alignment.topRight,
-                        child: Padding(
-                          padding: EdgeInsets.only(top: 4, right: 4),
-                          child: Icon(
-                            Icons.check,
-                            size: 12,
-                            color: Colors.white,
-                          ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        LucideIcons.award,
+                        size: 20,
+                        color: Color(0xFFFF385C),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '从业经验：${stylist.experienceYears}年',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF374151),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
+                const SizedBox(height: 16),
+              ],
+              // 擅长项目
+              if (stylist.specialties != null && stylist.specialties!.isNotEmpty) ...[
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    children: [
+                      Icon(
+                        LucideIcons.sparkles,
+                        size: 20,
+                        color: Color(0xFFFF385C),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        '擅长项目',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF374151),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: stylist.specialties!.map((item) {
+                    return Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        item,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF4B5563),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ],
           ),
         ),
@@ -521,285 +247,595 @@ class _SelectStylistPageState extends State<SelectStylistPage> {
     );
   }
 
-  /// 构建底部操作栏
-  Widget _buildBottomBar() {
-    String displayText = '请选择理发师';
-    if (_selectedStylist == 'none') {
-      displayText = '已选：不指定理发师';
-    } else if (_selectedStylist is Stylist) {
-      displayText = '已选：${(_selectedStylist as Stylist).name}';
+  Widget _buildStatusBadge(StylistStatus status) {
+    String text;
+    Color bgColor;
+    Color textColor;
+
+    switch (status) {
+      case StylistStatus.active:
+        text = '可约';
+        bgColor = const Color(0xFFDCFCE7);
+        textColor = const Color(0xFF059669);
+        break;
+      case StylistStatus.busy:
+        text = '已约满';
+        bgColor = const Color(0xFFFEE2E2);
+        textColor = const Color(0xFFDC2626);
+        break;
+      case StylistStatus.inactive:
+        text = '休息中';
+        bgColor = const Color(0xFFF3F4F6);
+        textColor = const Color(0xFF6B7280);
+        break;
     }
 
     return Container(
-      padding: const EdgeInsets.all(AppTheme.paddingLg),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.bgPrimary,
-        border: const Border(top: BorderSide(color: AppTheme.borderLight)),
-        boxShadow: AppTheme.shadowLarge,
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 选中信息
-          Text(
-            displayText,
-            style: const TextStyle(
-              fontSize: AppTheme.fontSizeBase,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppTheme.paddingMd),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          color: textColor,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
 
-          // 下一步按钮
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              onPressed: _selectedStylist != null ? _handleNext : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                disabledBackgroundColor: AppTheme.primary.withOpacity(0.6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusRound),
+  void _handleNext() {
+    if (_selectedStylistId == -1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('请选择理发师')),
+      );
+      return;
+    }
+
+    final bookingProvider = context.read<BookingProvider>();
+
+    if (_selectedStylistId == null) {
+      // 用户选择"不指定理发师"
+      bookingProvider.setStylist(null);
+    } else {
+      // 获取选中的理发师
+      final selectedStylist = _stylists.firstWhere(
+        (s) => s.id == _selectedStylistId,
+        orElse: () => _stylists.first,
+      );
+
+      bookingProvider.setStylist(selectedStylist);
+    }
+
+    context.push('/booking/select-time/${widget.shopId}');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String selectedName = '';
+    if (_selectedStylistId == null) {
+      selectedName = '不指定理发师';
+    } else if (_selectedStylistId != -1) {
+      try {
+        final stylist = _stylists.firstWhere((s) => s.id == _selectedStylistId);
+        selectedName = stylist.name;
+      } catch (e) {
+        // Stylist not found
+        selectedName = '';
+      }
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FA),
+      body: Stack(
+        children: [
+          // 主内容区域
+          CustomScrollView(
+            slivers: [
+              // 顶部间距（为固定header留空间）
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 56),
+              ),
+              // 提示文字
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
+                  child: Text(
+                    '选择您喜欢的理发师，或由系统自动分配',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
                 ),
               ),
-              child: const Text(
-                '下一步',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSizeLg,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              // "不指定理发师"选项
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: _buildNoPreferenceCard(),
                 ),
               ),
-            ),
+              // 加载或错误状态
+              if (_isLoading)
+                const SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(40),
+                      child: CircularProgressIndicator(
+                        color: Color(0xFFFF385C),
+                      ),
+                    ),
+                  ),
+                )
+              else if (_errorMessage != null)
+                SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 48,
+                            color: Color(0xFFFF385C),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: Color(0xFF6B7280)),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadStylists,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF385C),
+                            ),
+                            child: const Text('重试'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              // 理发师列表
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final stylist = _stylists[index];
+                        final isSelected = _selectedStylistId == stylist.id;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildStylistCard(stylist, isSelected),
+                        );
+                      },
+                      childCount: _stylists.length,
+                    ),
+                  ),
+                ),
+            ],
           ),
+          // 固定顶部导航栏
+          _buildHeader(),
+          // 固定底部操作栏
+          _buildBottomBar(selectedName),
         ],
       ),
     );
   }
-}
 
-/// 理发师详情弹窗
-class _StylistDetailSheet extends StatelessWidget {
-  final Stylist stylist;
-
-  const _StylistDetailSheet({required this.stylist});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.7,
-      decoration: const BoxDecoration(
-        color: AppTheme.bgPrimary,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppTheme.radiusLg)),
-      ),
-      child: Column(
-        children: [
-          // 拖动条
-          Container(
-            margin: const EdgeInsets.symmetric(vertical: AppTheme.paddingMd),
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppTheme.borderLight,
-              borderRadius: BorderRadius.circular(2),
-            ),
+  Widget _buildHeader() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.95),
+          border: const Border(
+            bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
           ),
-
-          // 内容
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(AppTheme.paddingXxl),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
               children: [
-                // 头像和基本信息
-                Center(
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primary,
-                          borderRadius: BorderRadius.circular(AppTheme.radiusRound),
-                          boxShadow: AppTheme.shadowPrimary,
-                        ),
-                        child: const Icon(
-                          Icons.person,
-                          size: 48,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: AppTheme.paddingLg),
-                      Text(
-                        stylist.name,
-                        style: const TextStyle(
-                          fontSize: AppTheme.fontSizeHuge,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (stylist.level != null) ...[
-                        const SizedBox(height: AppTheme.paddingSm),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppTheme.paddingMd,
-                            vertical: AppTheme.paddingXs,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primary,
-                            borderRadius: BorderRadius.circular(AppTheme.radiusSm),
-                          ),
-                          child: Text(
-                            stylist.level!,
-                            style: const TextStyle(
-                              fontSize: AppTheme.fontSizeSm,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppTheme.paddingXxl),
-
-                // 详细信息
-                if (stylist.title != null)
-                  _buildInfoRow('职称', stylist.title!),
-                if (stylist.experience != null)
-                  _buildInfoRow('从业年限', '${stylist.experience}年'),
-                if (stylist.specialty != null) ...[
-                  const SizedBox(height: AppTheme.paddingLg),
-                  const Text(
-                    '擅长项目',
-                    style: TextStyle(
-                      fontSize: AppTheme.fontSizeLg,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: AppTheme.paddingMd),
-                  Container(
-                    padding: const EdgeInsets.all(AppTheme.paddingLg),
+                GestureDetector(
+                  onTap: () => context.pop(),
+                  child: Container(
+                    width: 40,
+                    height: 40,
                     decoration: BoxDecoration(
-                      color: AppTheme.bgSecondary,
-                      borderRadius: BorderRadius.circular(AppTheme.radiusMd),
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.transparent,
                     ),
-                    child: Text(
-                      stylist.specialty!,
-                      style: const TextStyle(
-                        fontSize: AppTheme.fontSizeBase,
-                        color: AppTheme.textSecondary,
-                        height: 1.6,
+                    child: const Center(
+                      child: Icon(
+                        LucideIcons.arrowLeft,
+                        size: 20,
+                        color: Color(0xFF374151),
                       ),
                     ),
                   ),
-                ],
-
-                // 服务特色
-                const SizedBox(height: AppTheme.paddingXxl),
+                ),
+                const SizedBox(width: 16),
                 const Text(
-                  '服务特色',
+                  '选择理发师',
                   style: TextStyle(
-                    fontSize: AppTheme.fontSizeLg,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: AppTheme.paddingMd),
-                Container(
-                  padding: const EdgeInsets.all(AppTheme.paddingLg),
-                  decoration: BoxDecoration(
-                    color: AppTheme.bgSecondary,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-                  ),
-                  child: const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('• 注重细节，精益求精', style: TextStyle(height: 1.8)),
-                      Text('• 根据顾客脸型推荐合适发型', style: TextStyle(height: 1.8)),
-                      Text('• 专业造型建议和护理指导', style: TextStyle(height: 1.8)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppTheme.paddingXxl),
-
-                // 知道了按钮
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppTheme.radiusRound),
-                      ),
-                    ),
-                    child: const Text(
-                      '知道了',
-                      style: TextStyle(
-                        fontSize: AppTheme.fontSizeLg,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
+                    fontSize: 16,
+                    color: Color(0xFF111827),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppTheme.paddingLg),
-      padding: const EdgeInsets.all(AppTheme.paddingLg),
-      decoration: BoxDecoration(
-        color: AppTheme.bgSecondary,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMd),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: AppTheme.fontSizeBase,
-              color: AppTheme.textTertiary,
-            ),
+  Widget _buildNoPreferenceCard() {
+    final isSelected = _selectedStylistId == null;
+
+    return GestureDetector(
+      onTap: () => _handleSelectStylist(null, null),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFFFF1F2) : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? const Color(0xFFFF385C)
+                : const Color(0xFFD1D5DB),
+            width: 2,
+            style: isSelected ? BorderStyle.solid : BorderStyle.solid,
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: AppTheme.fontSizeMd,
-              fontWeight: FontWeight.bold,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0D000000),
+              offset: Offset(0, 2),
+              blurRadius: 8,
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFE9D5FF), Color(0xFFFCE7F3)],
+                ),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: const Center(
+                child: Text(
+                  '🎲',
+                  style: TextStyle(fontSize: 32),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        '不指定理发师',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF111827),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      if (isSelected) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          width: 20,
+                          height: 20,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFF385C),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            LucideIcons.check,
+                            size: 12,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '系统自动分配',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
 
-/// 右上角三角形画笔
-class _CornerTrianglePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppTheme.primary
-      ..style = PaintingStyle.fill;
+  Widget _buildStylistCard(Stylist stylist, bool isSelected) {
+    final isBusy = stylist.status == StylistStatus.busy;
 
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(size.width, size.height)
-      ..close();
-
-    canvas.drawPath(path, paint);
+    return GestureDetector(
+      onTap: () => _handleSelectStylist(stylist.id, stylist.status),
+      child: Opacity(
+        opacity: isBusy ? 0.5 : 1.0,
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFFFF1F2) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFFFF385C)
+                  : Colors.transparent,
+              width: 2,
+            ),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0D000000),
+                offset: Offset(0, 2),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 头像
+              GestureDetector(
+                onTap: !isBusy ? () => _showStylistDetail(stylist) : null,
+                child: Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFFFCE7F3), Color(0xFFE9D5FF)],
+                    ),
+                    borderRadius: BorderRadius.circular(32),
+                  ),
+                  child: Center(
+                    child: stylist.avatarUrl != null
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(32),
+                            child: Image.network(
+                              stylist.avatarUrl!,
+                              width: 64,
+                              height: 64,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Text('👨', style: TextStyle(fontSize: 32)),
+                            ),
+                          )
+                        : const Text('👨', style: TextStyle(fontSize: 32)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              // 信息区域
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 名称、状态徽章和选中标记
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  stylist.name,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0xFF111827),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              _buildStatusBadge(stylist.status),
+                            ],
+                          ),
+                        ),
+                        if (isSelected) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFFF385C),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              LucideIcons.check,
+                              size: 12,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // 职称
+                    if (stylist.title != null)
+                      Text(
+                        stylist.title!,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+                    // 从业年限
+                    if (stylist.experienceYears != null) ...[
+                      Row(
+                        children: [
+                          const Icon(
+                            LucideIcons.award,
+                            size: 16,
+                            color: Color(0xFF6B7280),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '从业${stylist.experienceYears}年',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    // 擅长项目
+                    if (stylist.specialties != null && stylist.specialties!.isNotEmpty) ...[
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: stylist.specialties!
+                            .take(3)
+                            .map((item) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              item,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  Widget _buildBottomBar(String selectedName) {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x1A000000),
+              offset: Offset(0, -2),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (selectedName.isNotEmpty) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      '已选：$selectedName',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF6B7280),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+              ],
+              GestureDetector(
+                onTap: _handleNext,
+                child: Container(
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: _selectedStylistId != -1
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFF385C), Color(0xFFE31C5F)],
+                          )
+                        : null,
+                    color: _selectedStylistId != -1
+                        ? null
+                        : const Color(0xFFD1D5DB),
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: _selectedStylistId != -1
+                        ? const [
+                            BoxShadow(
+                              color: Color(0x33FF385C),
+                              offset: Offset(0, 4),
+                              blurRadius: 12,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '下一步',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

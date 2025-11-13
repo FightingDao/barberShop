@@ -33,9 +33,17 @@ export const formatTime = (time: Date | string, format: string = 'HH:mm'): strin
   return dayjs(time).format(format)
 }
 
-// 解析日期
+// 解析日期 - 明确指定格式避免时区问题
 export const parseDate = (dateString: string): Date => {
-  return dayjs(dateString).toDate()
+  // 使用 UTC 模式解析日期字符串，避免时区偏移
+  // 如果输入是 YYYY-MM-DD 格式，设置为当天的 00:00:00 UTC
+  const parsed = dayjs(dateString, 'YYYY-MM-DD', true)
+  if (!parsed.isValid()) {
+    // 如果严格模式解析失败，尝试宽松模式
+    return dayjs(dateString).toDate()
+  }
+  // 返回当天的开始时间（UTC）
+  return parsed.toDate()
 }
 
 // 解析时间

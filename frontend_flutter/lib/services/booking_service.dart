@@ -31,13 +31,13 @@ class BookingService {
   }) async {
     try {
       final queryParams = <String, dynamic>{
-        'shopId': shopId,
-        'serviceId': serviceId,
+        'shop_id': shopId,
+        'service_id': serviceId,
         'date': date,
       };
 
       if (stylistId != null) {
-        queryParams['stylistId'] = stylistId;
+        queryParams['stylist_id'] = stylistId;
       }
 
       final response = await _api.get<List<dynamic>>(
@@ -77,14 +77,14 @@ class BookingService {
   }) async {
     try {
       final data = <String, dynamic>{
-        'shopId': shopId,
-        'serviceId': serviceId,
-        'appointmentDate': appointmentDate,
-        'appointmentTime': appointmentTime,
+        'shop_id': shopId,
+        'service_id': serviceId,
+        'appointment_date': appointmentDate,
+        'appointment_time': appointmentTime,
       };
 
       if (stylistId != null) {
-        data['stylistId'] = stylistId;
+        data['stylist_id'] = stylistId;
       }
       if (notes != null && notes.isNotEmpty) {
         data['notes'] = notes;

@@ -33,6 +33,8 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
     _shopProvider = context.read<ShopProvider>();
     if (!_isInitialized) {
       _shopProvider.fetchShopDetail(widget.shopId);
+      _shopProvider.fetchServices(widget.shopId);
+      _shopProvider.fetchStylists(widget.shopId);
       _isInitialized = true;
     }
   }
@@ -171,10 +173,7 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: GestureDetector(
-                    onTap: () {
-                      // 返回首页
-                      context.go('/');
-                    },
+                    onTap: () => context.pop(),
                     child: Container(
                       width: 40,
                       height: 40,
@@ -449,15 +448,45 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
 
   // 构建服务项目区域
   Widget _buildServicesSection(ShopProvider shopProvider) {
-    // 模拟服务数据（实际应从API获取）
-    final services = [
-      {'name': '男士剪发', 'price': 91},
-      {'name': '女士造型', 'price': 117},
-      {'name': '洗剪吹套餐', 'price': 68},
-      {'name': '烫发', 'price': 288},
-      {'name': '染发', 'price': 388},
-      {'name': '儿童理发', 'price': 28},
-    ];
+    // 使用实际的服务数据
+    final services = shopProvider.services;
+
+    // 如果没有服务数据，显示空状态
+    if (services.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              '服务项目',
+              style: TextStyle(
+                fontSize: 18,
+                color: Color(0xFF111827),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text(
+                '暂无服务项目',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF9CA3AF),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +551,7 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
                   const SizedBox(height: 8),
                   Flexible(
                     child: Text(
-                      service['name'] as String,
+                      service.name,
                       style: const TextStyle(
                         fontSize: 13,
                         color: Color(0xFF111827),
@@ -535,7 +564,7 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '¥${service['price']}',
+                    '¥${service.price.toStringAsFixed(0)}',
                     style: const TextStyle(
                       fontSize: 15,
                       color: Color(0xFFFF385C),
@@ -553,12 +582,45 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
 
   // 构建理发师团队区域
   Widget _buildStylistsSection(ShopProvider shopProvider) {
-    // 模拟理发师数据（实际应从API获取）
-    final stylists = [
-      {'name': '张师傅', 'title': '高级发型师', 'avatar': '👨'},
-      {'name': '李师傅', 'title': '资深发型师', 'avatar': '👨'},
-      {'name': '王师傅', 'title': '首席发型师', 'avatar': '👩'},
-    ];
+    // 使用实际的理发师数据
+    final stylists = shopProvider.stylists;
+
+    // 如果没有理发师数据，显示空状态
+    if (stylists.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              '理发师团队',
+              style: TextStyle(
+                fontSize: 18,
+                color: Color(0xFF111827),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text(
+                '暂无理发师信息',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF9CA3AF),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -588,47 +650,80 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          child: Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            alignment: WrapAlignment.spaceAround,
             children: stylists.map((stylist) {
-              return Column(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [Color(0xFFFCE7F3), Color(0xFFE9D5FF)],
+              return SizedBox(
+                width: (MediaQuery.of(context).size.width - 32 - 40 - 32) / 3, // 考虑padding和spacing
+                child: Column(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [Color(0xFFFCE7F3), Color(0xFFE9D5FF)],
+                        ),
+                        borderRadius: BorderRadius.circular(32),
                       ),
-                      borderRadius: BorderRadius.circular(32),
-                    ),
-                    child: Center(
-                      child: Text(
-                        stylist['avatar'] as String,
-                        style: const TextStyle(fontSize: 32),
+                      child: Center(
+                        child: stylist.avatarUrl != null && stylist.avatarUrl!.isNotEmpty
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(32),
+                                child: Image.network(
+                                  stylist.avatarUrl!,
+                                  width: 64,
+                                  height: 64,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Text(
+                                      stylist.name.isNotEmpty ? stylist.name.substring(0, 1) : '师',
+                                      style: const TextStyle(
+                                        fontSize: 24,
+                                        color: Color(0xFFFF385C),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              )
+                            : Text(
+                                stylist.name.isNotEmpty ? stylist.name.substring(0, 1) : '师',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  color: Color(0xFFFF385C),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    stylist['name'] as String,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF111827),
-                      fontWeight: FontWeight.w500,
+                    const SizedBox(height: 8),
+                    Text(
+                      stylist.name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF111827),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    stylist['title'] as String,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B7280),
+                    const SizedBox(height: 4),
+                    Text(
+                      stylist.title ?? '理发师',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF6B7280),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               );
             }).toList(),
           ),

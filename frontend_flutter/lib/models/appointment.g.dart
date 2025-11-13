@@ -8,22 +8,22 @@ part of 'appointment.dart';
 
 Appointment _$AppointmentFromJson(Map<String, dynamic> json) => Appointment(
   id: (json['id'] as num).toInt(),
-  userId: (json['userId'] as num).toInt(),
-  shopId: (json['shopId'] as num).toInt(),
-  serviceId: (json['serviceId'] as num).toInt(),
-  stylistId: (json['stylistId'] as num?)?.toInt(),
-  appointmentDate: json['appointmentDate'] as String,
-  appointmentTime: json['appointmentTime'] as String,
-  durationMinutes: (json['durationMinutes'] as num).toInt(),
+  userId: (json['user_id'] as num).toInt(),
+  shopId: (json['shop_id'] as num).toInt(),
+  serviceId: (json['service_id'] as num).toInt(),
+  stylistId: (json['stylist_id'] as num?)?.toInt(),
+  appointmentDate: json['appointment_date'] as String,
+  appointmentTime: json['appointment_time'] as String,
+  durationMinutes: (json['duration_minutes'] as num).toInt(),
   status: json['status'] as String,
   notes: json['notes'] as String?,
-  confirmationCode: json['confirmationCode'] as String,
-  createdAt: json['createdAt'] == null
+  confirmationCode: json['confirmation_code'] as String,
+  createdAt: json['created_at'] == null
       ? null
-      : DateTime.parse(json['createdAt'] as String),
-  updatedAt: json['updatedAt'] == null
+      : DateTime.parse(json['created_at'] as String),
+  updatedAt: json['updated_at'] == null
       ? null
-      : DateTime.parse(json['updatedAt'] as String),
+      : DateTime.parse(json['updated_at'] as String),
   shop: json['shop'] == null
       ? null
       : Shop.fromJson(json['shop'] as Map<String, dynamic>),
@@ -38,18 +38,18 @@ Appointment _$AppointmentFromJson(Map<String, dynamic> json) => Appointment(
 Map<String, dynamic> _$AppointmentToJson(Appointment instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'userId': instance.userId,
-      'shopId': instance.shopId,
-      'serviceId': instance.serviceId,
-      'stylistId': instance.stylistId,
-      'appointmentDate': instance.appointmentDate,
-      'appointmentTime': instance.appointmentTime,
-      'durationMinutes': instance.durationMinutes,
+      'user_id': instance.userId,
+      'shop_id': instance.shopId,
+      'service_id': instance.serviceId,
+      'stylist_id': instance.stylistId,
+      'appointment_date': instance.appointmentDate,
+      'appointment_time': instance.appointmentTime,
+      'duration_minutes': instance.durationMinutes,
       'status': instance.status,
       'notes': instance.notes,
-      'confirmationCode': instance.confirmationCode,
-      'createdAt': instance.createdAt?.toIso8601String(),
-      'updatedAt': instance.updatedAt?.toIso8601String(),
+      'confirmation_code': instance.confirmationCode,
+      'created_at': instance.createdAt?.toIso8601String(),
+      'updated_at': instance.updatedAt?.toIso8601String(),
       'shop': instance.shop?.toJson(),
       'service': instance.service?.toJson(),
       'stylist': instance.stylist?.toJson(),
