@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_flutter/lucide_flutter.dart';
 
-import '../config/app_theme.dart';
 import '../providers/shop_provider.dart';
 import '../widgets/widgets.dart';
 
-/// 店铺详情页
-/// 显示店铺的详细信息和预约入口
+/// 店铺详情页 - 严格按照设计稿还原
 class ShopDetailPage extends StatefulWidget {
   final int shopId;
 
@@ -20,6 +19,7 @@ class ShopDetailPage extends StatefulWidget {
 class _ShopDetailPageState extends State<ShopDetailPage> {
   late ShopProvider _shopProvider;
   bool _isInitialized = false;
+  bool _isFavorite = false;
 
   @override
   void initState() {
@@ -29,7 +29,6 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
     });
   }
 
-  /// 初始化数据
   void _initializeData() {
     _shopProvider = context.read<ShopProvider>();
     if (!_isInitialized) {
@@ -38,7 +37,6 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
     }
   }
 
-  /// 开始预约
   void _startBooking() {
     final shop = _shopProvider.selectedShop;
     if (shop != null) {
@@ -49,300 +47,670 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.bgSecondary,
+      backgroundColor: const Color(0xFFF7F8FA),
       body: Consumer<ShopProvider>(
         builder: (context, shopProvider, _) {
           // 加载中状态
           if (shopProvider.isLoading && shopProvider.selectedShop == null) {
-            return const Scaffold(
-              body: LoadingWidget(message: '加载中...'),
-            );
+            return const LoadingWidget(message: '加载中...');
           }
 
           // 错误状态
-          if (shopProvider.errorMessage != null &&
-              shopProvider.selectedShop == null) {
-            return Scaffold(
-              appBar: AppBar(),
-              body: AppErrorWidget(
-                message: shopProvider.errorMessage ?? '加载失败',
-                onRetry: () => _shopProvider.fetchShopDetail(widget.shopId),
-              ),
+          if (shopProvider.errorMessage != null && shopProvider.selectedShop == null) {
+            return Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: AppErrorWidget(
+                    message: shopProvider.errorMessage ?? '加载失败',
+                    onRetry: () => _shopProvider.fetchShopDetail(widget.shopId),
+                  ),
+                ),
+              ],
             );
           }
 
           final shop = shopProvider.selectedShop;
           if (shop == null) {
-            return Scaffold(
-              appBar: AppBar(),
-              body: const EmptyWidget(
-                message: '店铺信息加载失败',
-                icon: Icons.store_outlined,
-              ),
+            return Column(
+              children: [
+                _buildHeader(context),
+                const Expanded(
+                  child: EmptyWidget(
+                    message: '店铺信息加载失败',
+                    icon: Icons.store_outlined,
+                  ),
+                ),
+              ],
             );
           }
 
-          return CustomScrollView(
-            slivers: [
-              // AppBar
-              SliverAppBar(
-                expandedHeight: 200,
-                pinned: true,
-                flexibleSpace: FlexibleSpaceBar(
-                  background: shop.avatarUrl != null
-                      ? Image.network(
-                          shop.avatarUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: AppTheme.bgSecondary,
-                              child: const Icon(
-                                Icons.store,
-                                size: 64,
-                                color: AppTheme.textTertiary,
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          color: AppTheme.bgSecondary,
-                          child: const Icon(
-                            Icons.store,
-                            size: 64,
-                            color: AppTheme.textTertiary,
+          return Stack(
+            children: [
+              // 主内容区域
+              CustomScrollView(
+                slivers: [
+                  // 顶部间距（为固定header留空间）
+                  const SliverToBoxAdapter(
+                    child: SizedBox(height: 56),
+                  ),
+                  // 店铺大图
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 256,
+                      width: double.infinity,
+                      child: shop.image != null && shop.image!.isNotEmpty
+                          ? Image.network(
+                              shop.image!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildPlaceholderImage(shop.name);
+                              },
+                            )
+                          : _buildPlaceholderImage(shop.name),
+                    ),
+                  ),
+                  // 店铺信息卡片 - 使用 Transform.translate 向上偏移
+                  SliverToBoxAdapter(
+                    child: Transform.translate(
+                      offset: const Offset(0, -24),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _buildShopInfoCard(shop),
+                      ),
+                    ),
+                  ),
+                  // 内容区域
+                  SliverToBoxAdapter(
+                    child: Transform.translate(
+                      offset: const Offset(0, -24),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 服务项目
+                            _buildServicesSection(shopProvider),
+                            const SizedBox(height: 16),
+                            // 理发师团队
+                            _buildStylistsSection(shopProvider),
+                            const SizedBox(height: 24),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              // 固定顶部导航栏
+              _buildHeader(context),
+              // 固定底部预约按钮
+              _buildBottomButton(),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  // 构建固定顶部导航栏
+  Widget _buildHeader(BuildContext context) {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.95),
+          border: const Border(
+            bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Container(
+            height: 56,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Stack(
+              children: [
+                // 返回按钮
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.transparent,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          LucideIcons.arrowLeft,
+                          size: 20,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // 标题
+                const Center(
+                  child: Text(
+                    '店铺详情',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF111827),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                // 收藏按钮
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isFavorite = !_isFavorite;
+                      });
+                    },
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.transparent,
+                      ),
+                      child: Center(
+                        child: Icon(
+                          _isFavorite ? LucideIcons.heart : LucideIcons.heart,
+                          size: 20,
+                          color: _isFavorite ? const Color(0xFFFF385C) : const Color(0xFF374151),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 格式化时间字符串
+  String _formatTime(String? time) {
+    if (time == null || time.isEmpty) return '';
+
+    try {
+      // 尝试解析 ISO 8601 格式 (如 "1970-01-01T01:00:00.000Z")
+      final dateTime = DateTime.parse(time);
+      // 转换为本地时间
+      final localTime = dateTime.toLocal();
+      final hour = localTime.hour;
+      final minute = localTime.minute.toString().padLeft(2, '0');
+      return '$hour:$minute';
+    } catch (e) {
+      // 如果解析失败，尝试处理简单的 "HH:MM:SS" 格式
+      if (time.contains(':')) {
+        final parts = time.split(':');
+        if (parts.isNotEmpty) {
+          final hour = int.tryParse(parts[0]) ?? 0;
+          final minute = parts.length > 1 ? parts[1] : '00';
+          return '$hour:$minute';
+        }
+      }
+      return time;
+    }
+  }
+
+  // 构建店铺基本信息卡片
+  Widget _buildShopInfoCard(dynamic shop) {
+    final isOpen = shop.status == 'active' || shop.status == 'open';
+
+    return Material(
+      elevation: 8,
+      borderRadius: BorderRadius.circular(16),
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 店铺名称和营业状态
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    shop.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      color: Color(0xFF111827),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF385C),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    isOpen ? '营业中' : '休息中',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            // 评分、人均、已售
+            Row(
+              children: [
+                const Icon(LucideIcons.star, size: 16, color: Color(0xFFFBBF24)),
+                const SizedBox(width: 4),
+                Text(
+                  '${shop.rating ?? 4.8}分',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF111827),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  '|',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  '人均 ¥${shop.avgPrice ?? 88}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF4B5563),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  '|',
+                  style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
+                ),
+                const SizedBox(width: 16),
+                const Text(
+                  '已售902',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF4B5563),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            // 地址
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    LucideIcons.mapPin,
+                    size: 20,
+                    color: Color(0xFFFF385C),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          shop.address,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF111827),
                           ),
                         ),
-                ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '距离您 ${shop.distance ?? '2.1km'}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              // 内容
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppTheme.spacingLG),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 店铺基本信息
-                      _buildShopInfo(shop),
-                      const SizedBox(height: AppTheme.spacingXXL),
-                      // 营业时间
-                      _buildOperatingHours(shop),
-                      const SizedBox(height: AppTheme.spacingLG),
-                      // 联系方式
-                      _buildContactInfo(shop),
-                      const SizedBox(height: AppTheme.spacingLG),
-                      // 店铺描述
-                      if (shop.description != null)
-                        _buildDescription(shop.description!),
-                      const SizedBox(height: AppTheme.spacingXXL),
-                    ],
+            ),
+            const SizedBox(height: 12),
+            // 营业时间
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF9FAFB),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.clock,
+                    size: 20,
+                    color: Color(0xFF9CA3AF),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '营业时间',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF4B5563),
+                          ),
+                        ),
+                        Text(
+                          shop.openingTime != null && shop.closingTime != null
+                              ? '${_formatTime(shop.openingTime)} - ${_formatTime(shop.closingTime)}'
+                              : '9:00 - 21:00',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 构建服务项目区域
+  Widget _buildServicesSection(ShopProvider shopProvider) {
+    // 模拟服务数据（实际应从API获取）
+    final services = [
+      {'name': '男士剪发', 'price': 91},
+      {'name': '女士造型', 'price': 117},
+      {'name': '洗剪吹套餐', 'price': 68},
+      {'name': '烫发', 'price': 288},
+      {'name': '染发', 'price': 388},
+      {'name': '儿童理发', 'price': 28},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            '服务项目',
+            style: TextStyle(
+              fontSize: 18,
+              color: Color(0xFF111827),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 1.2,
+          ),
+          itemCount: services.length,
+          itemBuilder: (context, index) {
+            final service = services[index];
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFFDF2F8), Colors.white],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x0D000000),
+                    offset: Offset(0, 2),
+                    blurRadius: 8,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFCE7F3),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      LucideIcons.scissors,
+                      size: 20,
+                      color: Color(0xFFFF385C),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Flexible(
+                    child: Text(
+                      service['name'] as String,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF111827),
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '¥${service['price']}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFFFF385C),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // 构建理发师团队区域
+  Widget _buildStylistsSection(ShopProvider shopProvider) {
+    // 模拟理发师数据（实际应从API获取）
+    final stylists = [
+      {'name': '张师傅', 'title': '高级发型师', 'avatar': '👨'},
+      {'name': '李师傅', 'title': '资深发型师', 'avatar': '👨'},
+      {'name': '王师傅', 'title': '首席发型师', 'avatar': '👩'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            '理发师团队',
+            style: TextStyle(
+              fontSize: 18,
+              color: Color(0xFF111827),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0D000000),
+                offset: Offset(0, 2),
+                blurRadius: 8,
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: stylists.map((stylist) {
+              return Column(
+                children: [
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFCE7F3), Color(0xFFE9D5FF)],
+                      ),
+                      borderRadius: BorderRadius.circular(32),
+                    ),
+                    child: Center(
+                      child: Text(
+                        stylist['avatar'] as String,
+                        style: const TextStyle(fontSize: 32),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    stylist['name'] as String,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF111827),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    stylist['title'] as String,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 构建固定底部预约按钮
+  Widget _buildBottomButton() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x1A000000),
+              offset: Offset(0, -2),
+              blurRadius: 8,
+            ),
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: GestureDetector(
+            onTap: _startBooking,
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF385C), Color(0xFFE31C5F)],
+                ),
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x33FF385C),
+                    offset: Offset(0, 4),
+                    blurRadius: 12,
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: Text(
+                  '立即预约',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-            ],
-          );
-        },
-      ),
-      bottomNavigationBar: Consumer<ShopProvider>(
-        builder: (context, shopProvider, _) {
-          return BottomActionBar(
-            primaryButtonText: '立即预约',
-            onPrimaryPressed: _startBooking,
-            isLoading: shopProvider.isLoading,
-          );
-        },
+            ),
+          ),
+        ),
       ),
     );
   }
 
-  /// 构建店铺基本信息
-  Widget _buildShopInfo(dynamic shop) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          shop.name,
+  // 构建占位图片
+  Widget _buildPlaceholderImage(String shopName) {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF472B6), Color(0xFFFB7185)],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          shopName.isNotEmpty ? shopName.substring(0, 1) : '店',
           style: const TextStyle(
-            fontSize: AppTheme.fontSizeXXL,
+            fontSize: 48,
+            color: Colors.white,
             fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
           ),
         ),
-        const SizedBox(height: AppTheme.spacingMD),
-        // 状态标签
-        Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.spacingMD,
-            vertical: AppTheme.spacingSM,
-          ),
-          decoration: BoxDecoration(
-            color: shop.status == 'active'
-                ? AppTheme.success.withOpacity(0.1)
-                : AppTheme.textTertiary.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-          ),
-          child: Text(
-            shop.status == 'active' ? '营业中' : '休息中',
-            style: TextStyle(
-              fontSize: AppTheme.fontSizeBase,
-              color:
-                  shop.status == 'active' ? AppTheme.success : AppTheme.textSecondary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 构建营业时间
-  Widget _buildOperatingHours(dynamic shop) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.access_time,
-                size: 20,
-                color: AppTheme.primary,
-              ),
-              const SizedBox(width: AppTheme.spacingMD),
-              const Text(
-                '营业时间',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSizeLG,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spacingMD),
-          if (shop.openingTime != null && shop.closingTime != null)
-            Text(
-              '${shop.openingTime} - ${shop.closingTime}',
-              style: const TextStyle(
-                fontSize: AppTheme.fontSizeBase,
-                color: AppTheme.textSecondary,
-              ),
-            )
-          else
-            const Text(
-              '信息暂未提供',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeBase,
-                color: AppTheme.textTertiary,
-              ),
-            ),
-        ],
       ),
-    );
-  }
-
-  /// 构建联系方式
-  Widget _buildContactInfo(dynamic shop) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.phone,
-                size: 20,
-                color: AppTheme.primary,
-              ),
-              const SizedBox(width: AppTheme.spacingMD),
-              const Text(
-                '联系电话',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSizeLG,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spacingMD),
-          if (shop.phone != null)
-            GestureDetector(
-              onTap: () {
-                // TODO: 拨打电话
-              },
-              child: Text(
-                shop.phone!,
-                style: const TextStyle(
-                  fontSize: AppTheme.fontSizeBase,
-                  color: AppTheme.primary,
-                  fontWeight: FontWeight.w500,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            )
-          else
-            const Text(
-              '信息暂未提供',
-              style: TextStyle(
-                fontSize: AppTheme.fontSizeBase,
-                color: AppTheme.textTertiary,
-              ),
-            ),
-          const SizedBox(height: AppTheme.spacingLG),
-          Row(
-            children: [
-              const Icon(
-                Icons.location_on,
-                size: 20,
-                color: AppTheme.primary,
-              ),
-              const SizedBox(width: AppTheme.spacingMD),
-              const Text(
-                '地址',
-                style: TextStyle(
-                  fontSize: AppTheme.fontSizeLG,
-                  fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppTheme.spacingMD),
-          Text(
-            shop.address,
-            style: const TextStyle(
-              fontSize: AppTheme.fontSizeBase,
-              color: AppTheme.textSecondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 构建店铺描述
-  Widget _buildDescription(String description) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '店铺介绍',
-          style: TextStyle(
-            fontSize: AppTheme.fontSizeLG,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-        const SizedBox(height: AppTheme.spacingMD),
-        Text(
-          description,
-          style: const TextStyle(
-            fontSize: AppTheme.fontSizeBase,
-            color: AppTheme.textSecondary,
-            height: 1.6,
-          ),
-        ),
-      ],
     );
   }
 }

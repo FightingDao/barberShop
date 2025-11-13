@@ -22,7 +22,7 @@ class AppShell extends StatelessWidget {
       backgroundColor: const Color(0xFFF7F8FA),
       body: navigationShell,
       bottomNavigationBar: Container(
-        height: 80,
+        height: 64,
         decoration: const BoxDecoration(
           color: Colors.white,
           boxShadow: [

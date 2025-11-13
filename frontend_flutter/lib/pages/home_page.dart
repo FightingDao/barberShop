@@ -76,10 +76,10 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                 valueListenable: searchController,
                 builder: (context, value, _) {
                   return Container(
-                    height: 50,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: const [
                         BoxShadow(
                           color: Color(0x1A000000),
@@ -184,8 +184,8 @@ class _HomePageState extends State<HomePage> {
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _HomeHeaderDelegate(
-                    minExtent: 232,
-                    maxExtent: 232,
+                    minExtent: 230,
+                    maxExtent: 230,
                     searchController: _searchController,
                     onSearchChanged: _searchShops,
                     onClearSearch: () {
@@ -196,7 +196,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 // 店铺列表
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                   sliver: shopProvider.isLoading && shopProvider.shops.isEmpty
                       ? const SliverFillRemaining(
                           child: Center(
@@ -232,31 +232,71 @@ class _HomePageState extends State<HomePage> {
 }
 
 // 严格按照设计稿的店铺卡片
-class _DesignShopCard extends StatelessWidget {
+class _DesignShopCard extends StatefulWidget {
   final Shop shop;
   final VoidCallback onTap;
 
   const _DesignShopCard({required this.shop, required this.onTap});
 
   @override
-  Widget build(BuildContext context) {
-    final isOpen = shop.status == 'active' || shop.status == 'open';
+  State<_DesignShopCard> createState() => _DesignShopCardState();
+}
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16), // rounded-2xl
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x1A000000),
-              offset: Offset(0, 4),
-              blurRadius: 25,
-            ),
-          ],
-        ),
-        child: Column(
+class _DesignShopCardState extends State<_DesignShopCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isOpen = widget.shop.status == 'active' || widget.shop.status == 'open';
+
+    return MouseRegion(
+      onEnter: (_) {
+        setState(() => _isHovering = true);
+        _controller.forward();
+      },
+      onExit: (_) {
+        setState(() => _isHovering = false);
+        _controller.reverse();
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedBuilder(
+          animation: _scaleAnimation,
+          builder: (context, child) => Transform.scale(
+            scale: _scaleAnimation.value,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16), // rounded-2xl
+                boxShadow: [
+                  BoxShadow(
+                    color: _isHovering ? const Color(0x26000000) : const Color(0x1A000000),
+                    offset: const Offset(0, 4),
+                    blurRadius: _isHovering ? 30 : 25,
+                  ),
+                ],
+              ),
+              child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 图片区域
@@ -280,9 +320,9 @@ class _DesignShopCard extends StatelessWidget {
                       child: SizedBox(
                         width: double.infinity,
                         height: double.infinity,
-                        child: shop.image != null && shop.image!.isNotEmpty
+                        child: widget.shop.image != null && widget.shop.image!.isNotEmpty
                             ? Image.network(
-                                shop.image!,
+                                widget.shop.image!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return _buildPlaceholderImage();
@@ -335,7 +375,7 @@ class _DesignShopCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              shop.distance ?? '1.2km',
+                              widget.shop.distance ?? '1.2km',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: Color(0xFF6B7280),
@@ -360,7 +400,7 @@ class _DesignShopCard extends StatelessWidget {
                   children: [
                     // 店铺名称
                     Text(
-                      shop.name,
+                      widget.shop.name,
                       style: const TextStyle(
                         fontSize: 18,
                         color: Color(0xFF111827), // text-gray-900
@@ -381,7 +421,7 @@ class _DesignShopCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            shop.address,
+                            widget.shop.address,
                             style: const TextStyle(
                               fontSize: 14,
                               color: Color(0xFF4B5563), // text-gray-600
@@ -399,7 +439,7 @@ class _DesignShopCard extends StatelessWidget {
                       children: [
                         // 价格
                         Text(
-                          '¥${shop.avgPrice ?? 88}起',
+                          '¥${widget.shop.avgPrice ?? 88}起',
                           style: const TextStyle(
                             fontSize: 16,
                             color: Color(0xFFFF385C), // 设计稿中的红色
@@ -433,6 +473,9 @@ class _DesignShopCard extends StatelessWidget {
             ),
           ],
         ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -450,7 +493,7 @@ class _DesignShopCard extends StatelessWidget {
       ),
       child: Center(
         child: Text(
-          shop.name.isNotEmpty ? shop.name.substring(0, 1) : '店',
+          widget.shop.name.isNotEmpty ? widget.shop.name.substring(0, 1) : '店',
           style: const TextStyle(
             fontSize: 32,
             color: Colors.white,
