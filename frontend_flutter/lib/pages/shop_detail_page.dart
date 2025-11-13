@@ -110,33 +110,27 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
                           : _buildPlaceholderImage(shop.name),
                     ),
                   ),
-                  // 店铺信息卡片 - 使用 Transform.translate 向上偏移
+                  // 店铺信息卡片 - 常规布局
                   SliverToBoxAdapter(
-                    child: Transform.translate(
-                      offset: const Offset(0, -24),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: _buildShopInfoCard(shop),
-                      ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: _buildShopInfoCard(shop),
                     ),
                   ),
                   // 内容区域
                   SliverToBoxAdapter(
-                    child: Transform.translate(
-                      offset: const Offset(0, -24),
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // 服务项目
-                            _buildServicesSection(shopProvider),
-                            const SizedBox(height: 16),
-                            // 理发师团队
-                            _buildStylistsSection(shopProvider),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 服务项目
+                          _buildServicesSection(shopProvider),
+                          const SizedBox(height: 16),
+                          // 理发师团队
+                          _buildStylistsSection(shopProvider),
+                          const SizedBox(height: 24),
+                        ],
                       ),
                     ),
                   ),
@@ -177,7 +171,10 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: GestureDetector(
-                    onTap: () => context.pop(),
+                    onTap: () {
+                      // 返回首页
+                      context.go('/');
+                    },
                     child: Container(
                       width: 40,
                       height: 40,
@@ -270,10 +267,18 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
   Widget _buildShopInfoCard(dynamic shop) {
     final isOpen = shop.status == 'active' || shop.status == 'open';
 
-    return Material(
-      elevation: 8,
-      borderRadius: BorderRadius.circular(16),
-      color: Colors.white,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0D000000),
+            offset: Offset(0, 2),
+            blurRadius: 8,
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
