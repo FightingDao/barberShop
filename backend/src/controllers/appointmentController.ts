@@ -275,24 +275,11 @@ export const getAppointments = async (ctx: Context) => {
     },
   })
 
-  // 格式化日期和时间字段，并转换为 snake_case
+  // 格式化日期和时间字段
   const formattedAppointments = appointments.map((apt) => ({
-    id: apt.id,
-    user_id: apt.userId,
-    shop_id: apt.shopId,
-    service_id: apt.serviceId,
-    stylist_id: apt.stylistId,
-    appointment_date: formatDate(apt.appointmentDate),
-    appointment_time: formatTime(apt.appointmentTime),
-    duration_minutes: apt.durationMinutes,
-    status: apt.status,
-    notes: apt.notes,
-    confirmation_code: apt.confirmationCode,
-    created_at: apt.createdAt,
-    updated_at: apt.updatedAt,
-    shop: apt.shop,
-    service: apt.service,
-    stylist: apt.stylist,
+    ...apt,
+    appointmentDate: formatDate(apt.appointmentDate),
+    appointmentTime: formatTime(apt.appointmentTime),
   }))
 
   success(ctx, formattedAppointments, undefined, { page, limit, total })
@@ -326,24 +313,11 @@ export const getAppointmentDetail = async (ctx: Context) => {
     return
   }
 
-  // 格式化日期和时间字段，并转换为 snake_case
+  // 格式化日期和时间字段
   const formattedAppointment = {
-    id: appointment.id,
-    user_id: appointment.userId,
-    shop_id: appointment.shopId,
-    service_id: appointment.serviceId,
-    stylist_id: appointment.stylistId,
-    appointment_date: formatDate(appointment.appointmentDate),
-    appointment_time: formatTime(appointment.appointmentTime),
-    duration_minutes: appointment.durationMinutes,
-    status: appointment.status,
-    notes: appointment.notes,
-    confirmation_code: appointment.confirmationCode,
-    created_at: appointment.createdAt,
-    updated_at: appointment.updatedAt,
-    shop: appointment.shop,
-    service: appointment.service,
-    stylist: appointment.stylist,
+    ...appointment,
+    appointmentDate: formatDate(appointment.appointmentDate),
+    appointmentTime: formatTime(appointment.appointmentTime),
   }
 
   success(ctx, formattedAppointment)
