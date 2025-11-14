@@ -197,6 +197,7 @@ android {
 ```bash
 cd /Users/zhangdi/work/barberShop/frontend_flutter
 flutter build apk --debug
+flutter build apk --debug --dart-define=ENV=production
 ```
 
 输出路径: `build/app/outputs/flutter-apk/app-debug.apk`
