@@ -114,8 +114,10 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                                 onPressed: onClearSearch,
                               ),
                         contentPadding: const EdgeInsets.symmetric(
-                          vertical: 14,
+                          horizontal: 0,
+                          vertical: 12,
                         ),
+                        isDense: true,
                       ),
                     ),
                   );
