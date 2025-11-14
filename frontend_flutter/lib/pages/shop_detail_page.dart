@@ -666,40 +666,42 @@ class _ShopDetailPageState extends State<ShopDetailPage> {
                         gradient: const LinearGradient(
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
-                          colors: [Color(0xFFFCE7F3), Color(0xFFE9D5FF)],
+                          colors: [Color(0xFFF472B6), Color(0xFFFB7185)],
                         ),
                         borderRadius: BorderRadius.circular(32),
                       ),
-                      child: Center(
-                        child: stylist.avatarUrl != null && stylist.avatarUrl!.isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(32),
-                                child: Image.network(
-                                  stylist.avatarUrl!,
-                                  width: 64,
-                                  height: 64,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Text(
+                      child: stylist.avatarUrl != null && stylist.avatarUrl!.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(32),
+                              child: Image.network(
+                                stylist.avatarUrl!,
+                                width: 64,
+                                height: 64,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(
+                                    child: Text(
                                       stylist.name.isNotEmpty ? stylist.name.substring(0, 1) : '师',
                                       style: const TextStyle(
                                         fontSize: 24,
-                                        color: Color(0xFFFF385C),
-                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                    );
-                                  },
-                                ),
-                              )
-                            : Text(
+                                    ),
+                                  );
+                                },
+                              ),
+                            )
+                          : Center(
+                              child: Text(
                                 stylist.name.isNotEmpty ? stylist.name.substring(0, 1) : '师',
                                 style: const TextStyle(
                                   fontSize: 24,
-                                  color: Color(0xFFFF385C),
-                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                      ),
+                            ),
                     ),
                     const SizedBox(height: 8),
                     Text(

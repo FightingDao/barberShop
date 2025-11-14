@@ -186,8 +186,8 @@ class _HomePageState extends State<HomePage> {
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _HomeHeaderDelegate(
-                    minExtent: 230,
-                    maxExtent: 230,
+                    minExtent: 260,
+                    maxExtent: 260,
                     searchController: _searchController,
                     onSearchChanged: _searchShops,
                     onClearSearch: () {
