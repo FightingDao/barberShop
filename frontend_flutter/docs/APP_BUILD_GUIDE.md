@@ -2,6 +2,13 @@
 
 > 本文档详细介绍如何将 Flutter 项目打包成 Android APK/AAB 和 iOS IPA 应用
 
+```
+安卓：
+  flutter run --release --dart-define=ENV=production   
+iOS：
+  flutter build apk --debug --dart-define=ENV=production
+```
+
 ## 📋 目录
 
 - [前置准备](#前置准备)
@@ -196,7 +203,6 @@ android {
 
 ```bash
 cd /Users/zhangdi/work/barberShop/frontend_flutter
-flutter build apk --debug
 flutter build apk --debug --dart-define=ENV=production
 ```
 
